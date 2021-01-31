@@ -1,1 +1,3 @@
 # BIT
+
+Binary Index Tree.
