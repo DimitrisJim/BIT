@@ -25,40 +25,54 @@ class BIT(MutableSequence):
         # delegate to list, takes care of printing really big lists.
         return repr(self._st)
 
-    def __getitem__(self, k):
+    def __getitem__(self, index):
         """ Return prefix sum until k exclusive. """
         length = len(self)
-        if k > length:
+        if index > length:
             raise IndexError("Index out of range.")
 
         # Set accumulator to value at index k. Doesn't
         # require it to be initialized to value based on
         # op this way.
-        if k == 0:
-            return self._st[0]
-        acc = self._st[k-1]
-        k = k & (k - 1)
-        while k > 0:
-            acc = self.binop(acc, self._st[k-1])
-            k = k & (k - 1)
+        if index == 0:
+            return 0
+        acc = self._st[index-1]
+        index = index & (index - 1)
+        while index > 0:
+            acc = self.binop(acc, self._st[index-1])
+            index = index & (index - 1)
         return acc
 
-    def __setitem__(self, k, v):
+    # todo: use slice-iterable?
+    def __setitem__(self, index, value):
         """ Update value for index k. """
         length = len(self)
-        if k >= length:
+        if index >= length:
             raise IndexError("Index out of range.")
-        while k < length:
-            self._st[k] = self.binop(self._st[k], v)
-            k = k | k + 1
+        while index < length:
+            self._st[index] = self.binop(self._st[index], value)
+            index = index | index + 1
 
+    # todo: use Union[int, slice]?
     def __delitem__(self, index):
-        """ Must we rebuild the tree? An option would be setting
-        the value to 0 or 1 depending on op and . """
+        """ Op will probably be O(N), as insert will. """
 
     def __len__(self):
         """ Return number of elements in Binary Indexed Tree. """
         return len(self._st)
+
+    def append(self, value):
+        """ Append value to Binary Indexed Tree.  """
+        # If next index is odd, just append value. Else, can use the
+        # fact that st[-2] contains accumulated value until index
+        # len - 2 and st[-1] contains the final value missing.
+        # Combining v with these two values gives us the next value.
+        # todo: re-evaluate this.
+        # length = len(self)
+        # if length & 1:
+        #    acc_to_end = self.binop(self._st[-2], self._st[-1])
+        #    value = self.binop(acc_to_end, value)
+        # self._st.append(value)
 
     def insert(self, index, value):
         """ Must we rebuild tree? Probably. """
@@ -69,17 +83,14 @@ class BIT(MutableSequence):
 
         op plays a role, need it around.
         """
-        # Need a formalized way of doing this.
-        if self.binop is add:
-            inverse = sub
-        st, res = self._st, []
-        acc = st[0]
-        res.append(acc)
-        for i in range(1, len(st)):
-            if i & 1:
-                res.append(inverse(st[i], acc))
-            acc = self.binop(acc, res[i])
-        return res
+        # todo: fix this.
+        op = sub
+        length = j = len(self)
+        arr = self._st.copy()
+        while j := j // 2:
+            for i in range(length-1, 0, -2*j):
+                arr[i] = op(arr[i], arr[i-j])
+        return arr
 
     @staticmethod
     def bit_layout(iterable, binary_op=add):
@@ -87,10 +98,12 @@ class BIT(MutableSequence):
         loop makes serious sense when the intermediate
         representation in [tweakblogs] is understood.
         """
-        lst = list(iterable)
-        acc = lst[0]
-        for i in range(1, len(lst)):
-            acc = binary_op(acc, lst[i])
-            if i & 1:
-                lst[i] = acc
-        return lst
+        arr = list(iterable)
+        i, length = 1, len(arr)
+        while i < length:
+            j = 2*i - 1
+            while j < length:
+                arr[j] = binary_op(arr[j], arr[j-i])
+                j += 2 * i
+            i *= 2
+        return arr
