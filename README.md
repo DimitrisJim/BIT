@@ -6,9 +6,9 @@ Binary Index Tree.
 
 A couple of useful resourses for anyone looking for more:
 
- - [tweakblogs entry][tweakblogs] is what I would recomment. After
-   understanding the intermediate representation the code becomes
-   as clear as day.
+ - [This tweakblogs entry][tweakblogs] is what I would recommend. After
+   understanding the intermediate representation, the code becomes
+   clear as day.
  - [This stackexchange question][seIntuition] also has a very nice
    description. It mainly talks about the 'a-ha' moment behind 
    Fenwick Trees.
