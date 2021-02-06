@@ -10,6 +10,8 @@ be worse case O(logn).
 [XXX] Implement __iter__? MutableSequence.__iter__ uses old iteration protocol
 (calling __getitem__ until IndexError) which also suits us here since our
 __getitem__ returns the prefix sums. Probably leave as is.
+[XXX] Binop might need to be commutative. Also, small-opt by assigning it
+      to a local variable. Used in many loops.
 """
 from operator import add, sub
 from collections.abc import MutableSequence
@@ -87,22 +89,35 @@ class BIT(MutableSequence):
             step, j = j // 2, j << 1
             # careful, haven't added item so length
             # must be decreased by one.
-            value += self._st[length - 1 - step]
+            value = self.binop(value, self._st[length - 1 - step])
         self._st.append(value)
 
     def insert(self, index, value):
         """ Must we rebuild tree? Probably. """
 
     def original_layout(self):
-        """ Return the original layout used to build the 
+        """ Return the original layout used to build the
         Binary Indexed Tree.
+
+        This requires the inverse of the operator used to
+        construct the BIT originally.
+
+        Coarse counting of steps tells me this is O(N).
         """
+        # placeholder: must formalize.
         op = sub
-        length = j = len(self)
+        length = len(self)
+        # odd length doesn't have group of sums.
+        # move downwards and start from there.
+        # same logic here as in append.
+        if length & 1:
+            length -= 1
         arr = self._st.copy()
-        while j := j // 2:
-            for i in range(length-1, 0, -2*j):
-                arr[i] = op(arr[i], arr[i-j])
+        for i in range(length, 0, -2):
+            j = 2
+            while i % j == 0:
+                step, j = j // 2, j << 1
+                arr[i-1] = op(arr[i-1], arr[i-1-step])
         return arr
 
     @staticmethod
