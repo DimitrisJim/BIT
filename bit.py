@@ -1,20 +1,22 @@
-"""Main module."""
+"""Main module.
+
+[TODO]: Explanations must be more thorough.
+[TODO]: Probably need to expand on set/get/del item in order to
+        support slices. Range queries will be pretty with slicing.
+[XXX] Make append special case of insert? Insert, it seems likely, can't be
+implemented in O(logn) while append can. I'm leaning towards keeping them
+separate, that will make both more understandable and allow append to always
+be worse case O(logn).
+[XXX] Implement __iter__? MutableSequence.__iter__ uses old iteration protocol
+(calling __getitem__ until IndexError) which also suits us here since our
+__getitem__ returns the prefix sums. Probably leave as is.
+"""
 from operator import add, sub
 from collections.abc import MutableSequence
 
 
 class BIT(MutableSequence):
-    """ Binary Indexed Tree.
-
-
-    Notes:
-
-     - MutableSequence.__iter__ uses __getitem__. We *want* this,
-       using __getitem__ returns correct prefix sums. Yielding
-       directly from _storage wont.
-     - op should be able to be any binary operator that's sensible
-       for the type of items contained.
-    """
+    """ Binary Indexed Tree, commonly known as a Fenwick Tree. """
 
     def __init__(self, iterable=None, binary_op=add):
         self._st = self.bit_layout(list(iterable or []), binary_op)
@@ -30,16 +32,17 @@ class BIT(MutableSequence):
         length = len(self)
         if index > length:
             raise IndexError("Index out of range.")
-
-        # Set accumulator to value at index k. Doesn't
-        # require it to be initialized to value based on
-        # op this way.
         if index == 0:
             return 0
+
+        # Set accumulator to value at index k. Doesn't
+        # require it to be initialized to value that is
+        # dependant on op.
         acc = self._st[index-1]
         index = index & (index - 1)
         while index > 0:
             acc = self.binop(acc, self._st[index-1])
+            # clear leftmost bit.
             index = index & (index - 1)
         return acc
 
@@ -63,27 +66,37 @@ class BIT(MutableSequence):
 
     def append(self, value):
         """ Append value to Binary Indexed Tree.  """
-        # If next index is odd, just append value. Else, can use the
-        # fact that st[-2] contains accumulated value until index
-        # len - 2 and st[-1] contains the final value missing.
-        # Combining v with these two values gives us the next value.
-        # todo: re-evaluate this.
-        # length = len(self)
-        # if length & 1:
-        #    acc_to_end = self.binop(self._st[-2], self._st[-1])
-        #    value = self.binop(acc_to_end, value)
-        # self._st.append(value)
+        length = len(self)
+        # Index in which we will place new value is odd, can
+        # just append.
+        if length & 1 == 0:
+            self._st.append(value)
+            return
+
+        # O(logn) -- worse case manifests on powers of 2.
+        # Needs more explaining.
+        # start from j == 4. All even indices will be divisible by
+        # 2 so we just add st[length - 2//2 == 1] to our value whatever
+        # the case.
+        value = value + self._st[length - 1]
+        # increase length to denote the will-be length.
+        length, j = length + 1, 4
+        # continue while we're a power of 2.
+        while length % j == 0:
+            # j -> 4, 8, 16, 32
+            step, j = j // 2, j << 1
+            # careful, haven't added item so length
+            # must be decreased by one.
+            value += self._st[length - 1 - step]
+        self._st.append(value)
 
     def insert(self, index, value):
         """ Must we rebuild tree? Probably. """
 
     def original_layout(self):
-        """ Needs work. Looking at the intermediate
-        repr we can figure out how to brake this apart.
-
-        op plays a role, need it around.
+        """ Return the original layout used to build the 
+        Binary Indexed Tree.
         """
-        # todo: fix this.
         op = sub
         length = j = len(self)
         arr = self._st.copy()
