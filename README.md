@@ -1,6 +1,6 @@
 # BIT
 
-Binary Index Tree.
+Binary Index Tree. WIP.
 
 ## Resources:
 

@@ -3,6 +3,7 @@
 [TODO]: Explanations must be more thorough.
 [TODO]: Probably need to expand on set/get/del item in order to
         support slices. Range queries will be pretty with slicing.
+
 [XXX] Make append special case of insert? Insert, it seems likely, can't be
 implemented in O(logn) while append can. I'm leaning towards keeping them
 separate, that will make both more understandable and allow append to always
@@ -12,6 +13,15 @@ be worse case O(logn).
 __getitem__ returns the prefix sums. Probably leave as is.
 [XXX] Binop might need to be commutative. Also, small-opt by assigning it
       to a local variable. Used in many loops.
+[XXX] What should I do with inheritted reverse? No sense allowing in-place
+      reversal. Remove it from class dict altogether?
+[XXX] __setitem__ currently does the job of update. I forgot it temporarily,
+     is it better if insert took the role of update? I'm thinking an update
+     method would be better.
+
+      - update      -> update value.
+      - __setitem__ -> replace value.
+      - insert      -> insert new value.
 """
 from operator import add, sub
 from collections.abc import MutableSequence
@@ -50,13 +60,7 @@ class BIT(MutableSequence):
 
     # todo: use slice-iterable?
     def __setitem__(self, index, value):
-        """ Update value for index k. """
-        length = len(self)
-        if index >= length:
-            raise IndexError("Index out of range.")
-        while index < length:
-            self._st[index] = self.binop(self._st[index], value)
-            index = index | index + 1
+        """ Replace value for index k. """
 
     # todo: use Union[int, slice]?
     def __delitem__(self, index):
@@ -65,6 +69,15 @@ class BIT(MutableSequence):
     def __len__(self):
         """ Return number of elements in Binary Indexed Tree. """
         return len(self._st)
+
+    def update(self, index, value):
+        """ Update value for index k. """
+        length = len(self)
+        if index >= length:
+            raise IndexError("Index out of range.")
+        while index < length:
+            self._st[index] = self.binop(self._st[index], value)
+            index = index | index + 1
 
     def append(self, value):
         """ Append value to Binary Indexed Tree.  """
