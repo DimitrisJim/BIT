@@ -11,6 +11,8 @@ be worse case O(logn).
 [XXX] Implement __iter__? MutableSequence.__iter__ uses old iteration protocol
 (calling __getitem__ until IndexError) which also suits us here since our
 __getitem__ returns the prefix sums. Probably leave as is.
+[XXX] Make a couple of helper functions for traversing left/right. There's
+      a lot of duplication currently going on.
 [XXX] Binop might need to be commutative. Also, small-opt by assigning it
       to a local variable. Used in many loops.
 [XXX] What should I do with inheritted reverse? No sense allowing in-place
@@ -44,6 +46,7 @@ class BIT(MutableSequence):
         length = len(self)
         if index > length:
             raise IndexError("Index out of range.")
+        # actually, should this raise?
         if index == 0:
             return 0
 
@@ -61,6 +64,28 @@ class BIT(MutableSequence):
     # todo: use slice-iterable?
     def __setitem__(self, index, value):
         """ Replace value for index k. """
+        # get old value, remove old value from
+        # position, insert new value and go along
+        # to other positions and update.
+        # todo: sloppy, formalize.
+        inverse_op = sub
+        old = self._st[index]
+        if index & 1:
+            # similar logic to append.
+            old = inverse_op(old, self._st[index-1])
+            # odd indices hold prefix sums, go left
+            # and find original value for old.
+            j = 4
+            while (index + 1) % j == 0:
+                step, j = j // 2, j << 1
+                old = inverse_op(old, self._st[index-step])
+
+        # we have old and new. go right and update
+        # indices using this value.
+        while index < len(self):
+            self._st[index] = inverse_op(self._st[index], old)
+            self._st[index] = self.binop(self._st[index], value)
+            index = index | index + 1
 
     # todo: use Union[int, slice]?
     def __delitem__(self, index):
@@ -107,6 +132,11 @@ class BIT(MutableSequence):
 
     def insert(self, index, value):
         """ Must we rebuild tree? Probably. """
+        # grab original layout, insert there, rebuild.
+        # todo: could we not? think about it.
+        arr = self.original_layout()
+        arr.insert(index, value)
+        self._st = self.bit_layout(arr)
 
     def original_layout(self):
         """ Return the original layout used to build the
@@ -125,7 +155,7 @@ class BIT(MutableSequence):
         # same logic here as in append.
         if length & 1:
             length -= 1
-        arr = self._st.copy()
+        arr = [*self._st]
         for i in range(length, 0, -2):
             j = 2
             while i % j == 0:

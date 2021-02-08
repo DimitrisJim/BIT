@@ -31,7 +31,8 @@ intensities = {
 
 
 class DummyPS(MutableSequence):
-    """ The dumb version to find prefix sums. Wraps a list. """
+    """ The dumb version to find prefix sums. Wraps and 
+    delegates to a list. """
 
     def __init__(self, iterable=None, op=add):
         self.binop = op
@@ -48,15 +49,12 @@ class DummyPS(MutableSequence):
         return sum_
 
     def __setitem__(self, index, value):
-        """ Delegate to list. """
         self.storage[index] = value
 
     def update(self, index, value):
-        """ Delegate.  O(1). """
         self.storage[index] += value
 
     def __delitem__(self, index):
-        """ Delegate. O(N) """
         del self.storage[index]
 
     def __len__(self):
@@ -164,3 +162,59 @@ def test_reversed():
 
         for i, j in zip(reversed(bit), reversed(dummy)):
             assert i == j
+
+
+def test_iadd_extend():
+    """ Implemented in MutableSequence; continuously calls append for
+    every element in other. We toggle on calling __iadd__ or extend
+    since both are drastically similar.
+    """
+    for length in intensities[INTENSITY]:
+        bit, dummy = bit_dummy([])
+        rnd_lst = rand_int_list(length)
+
+        # don't add to many chunks.
+        added, toggle = 0, 0
+        while added < length:
+            # grab a random lengthed chunk,
+            chunk = rnd_lst[:randint(1, length)]
+            added += len(chunk)
+            if toggle:
+                bit.extend(chunk)
+                dummy.extend(chunk)
+            else:
+                bit += chunk
+                dummy += chunk
+            toggle ^= 1
+            assert bit[added] == dummy[added]
+
+
+def test_insert():
+    """ Insert in random positions and check the sums are
+    correct. """
+    for length in intensities[INTENSITY]:
+        bit, dummy = bit_dummy(rand_int_list(length))
+        rnd_lst = rand_int_list(length)
+
+        for i in rnd_lst:
+            rand_pos = randint(0, len(bit))
+            bit.insert(rand_pos, i)
+            dummy.insert(rand_pos, i)
+            assert bit[len(bit)] == dummy[len(dummy)]
+
+
+def test_set():
+    """ Set (completely replace) value at specified index. 
+    BIT.__setitem__ should be O(logN).
+    """
+    for length in intensities[INTENSITY]:
+        bit, dummy = bit_dummy(rand_int_list(length))
+
+        for i in range(length):
+            rand_pos = randint(0, len(bit) - 1)
+            rand_value = randint(0, length)
+            bit[rand_pos] = rand_value
+            dummy[rand_pos] = rand_value
+            for i in range(rand_pos, len(bit)+1):
+                print(bit, dummy.storage, rand_pos, rand_value, i)
+                assert bit[i] == dummy[i]
