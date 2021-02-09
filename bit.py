@@ -13,8 +13,8 @@ be worse case O(logn).
 __getitem__ returns the prefix sums. Probably leave as is.
 [XXX] Make a couple of helper functions for traversing left/right. There's
       a lot of duplication currently going on.
-[XXX] Binop might need to be commutative. Also, small-opt by assigning it
-      to a local variable. Used in many loops.
+[XXX] Binop might need to be commutative and associative. Also, small-opt
+      by assigning it to a local variable. Used in many loops.
 [XXX] __setitem__ currently does the job of update. I forgot it temporarily,
      is it better if insert took the role of update? I'm thinking an update
      method would be better.
@@ -57,10 +57,10 @@ class BIT:
         index. Raises IndexError if BIT is empty or index is out of bounds.
         Valid bounds for index range in [0, len(B)).
         """
+        # handle indexing behaviour.
         length = len(self)
-        # adjust index if negative.
         index = index + length if index < 0 else index
-        if index > length or length == 0:
+        if index >= length or length == 0:
             raise IndexError("Index out of range.")
         # count *until* (including) index
         index = index + 1
@@ -70,10 +70,8 @@ class BIT:
         # dependant on op.
         acc = self._st[index-1]
         index = index & (index - 1)
-        while index > 0:
-            acc = self.binop(acc, self._st[index-1])
-            # clear leftmost bit.
-            index = index & (index - 1)
+        for idx in self._follow_right(index):
+            acc = self.binop(acc, self._st[idx-1])
         return acc
 
     # todo: use slice-iterable?
@@ -93,21 +91,15 @@ class BIT:
         inverse_op = sub
         old = self._st[index]
         if index & 1:
-            # similar logic to append.
-            old = inverse_op(old, self._st[index-1])
             # odd indices hold prefix sums, go left
             # and find original value for old.
-            j = 4
-            while (index + 1) % j == 0:
-                step, j = j // 2, j << 1
+            for step in self._powers_of_two(index + 1):
                 old = inverse_op(old, self._st[index-step])
 
-        # we have old and new. go right and update
-        # indices using this value.
-        while index < len(self):
-            self._st[index] = inverse_op(self._st[index], old)
-            self._st[index] = self.binop(self._st[index], value)
-            index = index | index + 1
+        # we have old and new. go right and update values.
+        for idx in self._follow_left(index, length):
+            self._st[idx] = inverse_op(self._st[idx], old)
+            self._st[idx] = self.binop(self._st[idx], value)
 
     def update(self, index, value):
         """ B.update(index, value) -- Update value at given index.
@@ -117,9 +109,9 @@ class BIT:
         index = index + length if index < 0 else index
         if index >= length or length == 0:
             raise IndexError("Index out of range.")
-        while index < length:
-            self._st[index] = self.binop(self._st[index], value)
-            index = index | index + 1
+
+        for idx in self._follow_left(index, length):
+            self._st[idx] = self.binop(self._st[idx], value)
 
     def append(self, value):
         """ B.append(value) -- Append a new value to the BIT.
@@ -127,25 +119,13 @@ class BIT:
         length = len(self)
         # Index in which we will place new value is odd, can
         # just append.
-        if length & 1 == 0:
-            self._st.append(value)
-            return
-
-        # O(logn) -- worse case manifests on powers of 2.
-        # Needs more explaining.
-        # start from j == 4. All even indices will be divisible by
-        # 2 so we just add st[length - 2//2 == 1] to our value whatever
-        # the case.
-        value = value + self._st[length - 1]
-        # increase length to denote the will-be length.
-        length, j = length + 1, 4
-        # continue while we're a power of 2.
-        while length % j == 0:
-            # j -> 4, 8, 16, 32
-            step, j = j // 2, j << 1
-            # careful, haven't added item so length
-            # must be decreased by one.
-            value = self.binop(value, self._st[length - 1 - step])
+        if length & 1:
+            # O(logn) -- worse case manifests on powers of 2.
+            # Needs more explaining, pass will-be len.
+            for step in self._powers_of_two(length + 1):
+                # careful, haven't added item so length
+                # must be decreased by one.
+                value = self.binop(value, self._st[length - step])
         self._st.append(value)
 
     # todo: could we somehow not be O(N)? -- think about it
@@ -173,6 +153,7 @@ class BIT:
         if index == len(self) - 1:
             value = self._st.pop()
             return value
+
         # get original layout, remove from there, rebuild array.
         # underlying list takes care of wrong index.
         arr = self.original_layout()
@@ -182,10 +163,10 @@ class BIT:
         return value
 
     def remove(self, value):
-        """ Remove value from BIT. """
+        """ todo: Remove value from BIT. """
 
     def index(self, value):
-        """ Return index of given value. """
+        """ todo: Return index of given value. """
 
     def __iadd__(self, iterable):
         """ B += iterable -- In-place addition of elements in
@@ -203,10 +184,9 @@ class BIT:
             self.append(value)
 
     def count(self, value):
-        """ count sums or values? values, probably. """
+        """ todo: count sums or values? values, probably. """
 
     # Helpers.
-
     # todo: op is hardcoded. formalize.
     def original_layout(self):
         """ Return the original layout used to build the
@@ -226,9 +206,7 @@ class BIT:
             length -= 1
         arr = [*self._st]
         for i in range(length, 0, -2):
-            j = 2
-            while i % j == 0:
-                step, j = j // 2, j << 1
+            for step in self._powers_of_two(i):
                 arr[i-1] = inverse_op(arr[i-1], arr[i-1-step])
         return arr
 
@@ -247,6 +225,33 @@ class BIT:
                 j += 2 * i
             i *= 2
         return arr
+
+    # todo: these all are related. haven't been able to unify
+    # nicely yet. A single function centered around powers of
+    # two seems (mentally for me at least) like the way to go.
+    @staticmethod
+    def _follow_left(index, stop):
+        """ Basically flipping left-most zero bits.  """
+        while index < stop:
+            yield index
+            index |= index + 1
+
+    @staticmethod
+    def _follow_right(index, stop=0):
+        """ Basically consuming any 1 set bits."""
+        while index > stop:
+            yield index
+            index &= index - 1
+
+    @staticmethod
+    def _powers_of_two(index, start=2):
+        """ Yields powers of two that perfectly divide index.
+        We're basically consuming leftmost 0 bits in index.
+        """
+        while index & 1 == 0:
+            yield start // 2
+            start <<= 1
+            index >>= 1
 
 
 # Register as virtual subclass.

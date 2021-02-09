@@ -17,7 +17,7 @@ intensities = {
     'quick': {
         randint(0, 10),
         randint(10, 100),
-        # randint(100, 1000)
+        randint(100, 1000)
     },
     'thorough': {
         randint(1000, 10000),
@@ -215,5 +215,4 @@ def test_set():
             bit[rand_pos] = rand_value
             dummy[rand_pos] = rand_value
             for i in range(rand_pos, len(bit)):
-                print(bit, dummy.storage, rand_pos, rand_value, i)
                 assert bit[i] == dummy[i]
