@@ -17,7 +17,7 @@ intensities = {
     'quick': {
         randint(0, 10),
         randint(10, 100),
-        randint(100, 1000)
+        # randint(100, 1000)
     },
     'thorough': {
         randint(1000, 10000),
@@ -40,11 +40,10 @@ class DummyPS(MutableSequence):
 
     def __getitem__(self, index):
         """ O(N) prefix sum. """
-        if index == 0:
-            return 0
+        index = index + len(self) if index < 0 else index
         op = self.binop
         sum_ = self.storage[0]
-        for i in range(1, index):
+        for i in range(1, index+1):
             sum_ = op(sum_, self.storage[i])
         return sum_
 
@@ -105,12 +104,12 @@ def test_sums():
     for length in intensities[INTENSITY]:
         bit, dummy = bit_dummy(rand_int_list(length))
 
-        for i in range(length):
-            assert bit[i] == dummy[i]
+        for bi, di in zip(bit, dummy):
+            assert bi == di
 
         # sanity, check that IndexError is raised.
         with pytest.raises(IndexError):
-            bit[length+1]
+            bit[length]
 
 
 def test_append():
@@ -178,7 +177,7 @@ def test_iadd_extend():
         while added < length:
             # grab a random lengthed chunk,
             chunk = rnd_lst[:randint(1, length)]
-            added += len(chunk)
+            added += len(chunk) - 1
             if toggle:
                 bit.extend(chunk)
                 dummy.extend(chunk)
@@ -200,7 +199,7 @@ def test_insert():
             rand_pos = randint(0, len(bit))
             bit.insert(rand_pos, i)
             dummy.insert(rand_pos, i)
-            assert bit[len(bit)] == dummy[len(dummy)]
+            assert bit[-1] == dummy[-1]
 
 
 def test_set():
@@ -215,6 +214,6 @@ def test_set():
             rand_value = randint(0, length)
             bit[rand_pos] = rand_value
             dummy[rand_pos] = rand_value
-            for i in range(rand_pos, len(bit)+1):
+            for i in range(rand_pos, len(bit)):
                 print(bit, dummy.storage, rand_pos, rand_value, i)
                 assert bit[i] == dummy[i]

@@ -15,8 +15,6 @@ __getitem__ returns the prefix sums. Probably leave as is.
       a lot of duplication currently going on.
 [XXX] Binop might need to be commutative. Also, small-opt by assigning it
       to a local variable. Used in many loops.
-[XXX] What should I do with inheritted reverse? No sense allowing in-place
-      reversal. Remove it from class dict altogether?
 [XXX] __setitem__ currently does the job of update. I forgot it temporarily,
      is it better if insert took the role of update? I'm thinking an update
      method would be better.
@@ -24,31 +22,48 @@ __getitem__ returns the prefix sums. Probably leave as is.
       - update      -> update value.
       - __setitem__ -> replace value.
       - insert      -> insert new value.
+[XXX] Handle negative indices. (done, double check and test pending)
 """
 from operator import add, sub
 from collections.abc import MutableSequence
 
 
-class BIT(MutableSequence):
+# todo: big todo, formalize way binary ops are used.
+class BIT:
     """ Binary Indexed Tree, commonly known as a Fenwick Tree. """
 
     def __init__(self, iterable=None, binary_op=add):
+        """ BIT([iterable], [binary_op]) -- Initialize BIT.
+
+        Binary op must be a commutative operator taking two values
+        and returning one result.
+        """
         self._st = self.bit_layout(list(iterable or []), binary_op)
         self.binop = binary_op
 
     def __repr__(self):
-        """ Return representation of Binary Index Tree. """
+        """ repr(B) -> str -- Return representation of
+        Binary Index Tree. """
         # delegate to list, takes care of printing really big lists.
         return repr(self._st)
 
+    def __len__(self):
+        """ len(B) -> int -- Return number of elements in
+        Binary Indexed Tree. """
+        return len(self._st)
+
     def __getitem__(self, index):
-        """ Return prefix sum until k exclusive. """
+        """ B[index] = value -- Get prefix sum until (including!) given
+        index. Raises IndexError if BIT is empty or index is out of bounds.
+        Valid bounds for index range in [0, len(B)).
+        """
         length = len(self)
-        if index > length:
+        # adjust index if negative.
+        index = index + length if index < 0 else index
+        if index > length or length == 0:
             raise IndexError("Index out of range.")
-        # actually, should this raise?
-        if index == 0:
-            return 0
+        # count *until* (including) index
+        index = index + 1
 
         # Set accumulator to value at index k. Doesn't
         # require it to be initialized to value that is
@@ -62,12 +77,19 @@ class BIT(MutableSequence):
         return acc
 
     # todo: use slice-iterable?
+    # todo: inverse_op should depend on binop, formalize.
     def __setitem__(self, index, value):
-        """ Replace value for index k. """
+        """ B[index] = value -- Update value at given index.
+        Raises IndexError if BIT is empty or index is out of bounds.
+        """
         # get old value, remove old value from
         # position, insert new value and go along
         # to other positions and update.
-        # todo: sloppy, formalize.
+        # adjust index if necessary
+        length = len(self)
+        index = index + length if index < 0 else index
+        if index >= length or length == 0:
+            raise IndexError("Index out of range.")
         inverse_op = sub
         old = self._st[index]
         if index & 1:
@@ -87,25 +109,21 @@ class BIT(MutableSequence):
             self._st[index] = self.binop(self._st[index], value)
             index = index | index + 1
 
-    # todo: use Union[int, slice]?
-    def __delitem__(self, index):
-        """ Op will probably be O(N), as insert will. """
-
-    def __len__(self):
-        """ Return number of elements in Binary Indexed Tree. """
-        return len(self._st)
-
     def update(self, index, value):
-        """ Update value for index k. """
+        """ B.update(index, value) -- Update value at given index.
+        Raises IndexError if BIT is empty or index is out of bounds.
+        """
         length = len(self)
-        if index >= length:
+        index = index + length if index < 0 else index
+        if index >= length or length == 0:
             raise IndexError("Index out of range.")
         while index < length:
             self._st[index] = self.binop(self._st[index], value)
             index = index | index + 1
 
     def append(self, value):
-        """ Append value to Binary Indexed Tree.  """
+        """ B.append(value) -- Append a new value to the BIT.
+        Sums are updated automatically. """
         length = len(self)
         # Index in which we will place new value is odd, can
         # just append.
@@ -130,14 +148,66 @@ class BIT(MutableSequence):
             value = self.binop(value, self._st[length - 1 - step])
         self._st.append(value)
 
+    # todo: could we somehow not be O(N)? -- think about it
     def insert(self, index, value):
-        """ Must we rebuild tree? Probably. """
+        """ B.insert(index, value) -- Insert value before index. """
         # grab original layout, insert there, rebuild.
-        # todo: could we not? think about it.
         arr = self.original_layout()
+
+        # takes care of handling index.
         arr.insert(index, value)
         self._st = self.bit_layout(arr)
 
+    # todo: use Union[int, slice]?
+    def __delitem__(self, index):
+        """ del B[key] -- Remove item at given index. Raises
+        IndexError if BIT is empty or index is out of range.
+        """
+        _ = self.pop(index)
+
+    def pop(self, index=-1):
+        """ B.pop([index]) -> item -- Remove and return item
+        at given index (default -1). Raise IndexError if BIT
+        is empty or index is out of range. """
+        index = index + len(self) if index < 0 else index
+        if index == len(self) - 1:
+            value = self._st.pop()
+            return value
+        # get original layout, remove from there, rebuild array.
+        # underlying list takes care of wrong index.
+        arr = self.original_layout()
+        value = arr[index]
+        del arr[index]
+        self._st = self.bit_layout(arr, self.binop)
+        return value
+
+    def remove(self, value):
+        """ Remove value from BIT. """
+
+    def index(self, value):
+        """ Return index of given value. """
+
+    def __iadd__(self, iterable):
+        """ B += iterable -- In-place addition of elements in
+        iterable into B. """
+        self.extend(iterable)
+        return self
+
+    def extend(self, iterable):
+        """ B.extend(iterable) -- extend Binary Indexed Tree by
+        appending elements from iterable. """
+        if iterable is self:
+            # don't use sums!
+            iterable = self.original_layout()
+        for value in iterable:
+            self.append(value)
+
+    def count(self, value):
+        """ count sums or values? values, probably. """
+
+    # Helpers.
+
+    # todo: op is hardcoded. formalize.
     def original_layout(self):
         """ Return the original layout used to build the
         Binary Indexed Tree.
@@ -147,8 +217,7 @@ class BIT(MutableSequence):
 
         Coarse counting of steps tells me this is O(N).
         """
-        # placeholder: must formalize.
-        op = sub
+        inverse_op = sub
         length = len(self)
         # odd length doesn't have group of sums.
         # move downwards and start from there.
@@ -160,7 +229,7 @@ class BIT(MutableSequence):
             j = 2
             while i % j == 0:
                 step, j = j // 2, j << 1
-                arr[i-1] = op(arr[i-1], arr[i-1-step])
+                arr[i-1] = inverse_op(arr[i-1], arr[i-1-step])
         return arr
 
     @staticmethod
@@ -178,3 +247,7 @@ class BIT(MutableSequence):
                 j += 2 * i
             i *= 2
         return arr
+
+
+# Register as virtual subclass.
+MutableSequence.register(BIT)
