@@ -7,7 +7,8 @@ quite slow here due to many O(N) ops.
 from collections.abc import MutableSequence
 from random import randint
 import pytest
-from bit import BIT, Add
+from operator import add, sub
+from bit import BIT
 
 
 # quick toggle for test intensity.
@@ -33,7 +34,7 @@ class DummyPS(MutableSequence):
     """ The dumb version to find prefix sums. Wraps and 
     delegates to a list. """
 
-    def __init__(self, iterable=None, op=Add):
+    def __init__(self, iterable=None, op=add):
         self.binop = op
         self.storage = list(iterable) or []
 
@@ -70,8 +71,8 @@ def rand_int_list(length, start=0, end=1_000_000):
     return [randint(start, end) for _ in range(length)]
 
 
-def bit_dummy(lst, binop=Add):
-    return BIT(lst, binop), DummyPS(lst, binop)
+def bit_dummy(lst, binop=add, inverse=sub):
+    return BIT(lst, binop, inverse), DummyPS(lst, binop)
 
 
 def test_basic():
@@ -93,10 +94,10 @@ def test_basic():
 
 
 def test_layout_changes():
-    assert BIT.bit_layout([]) == BIT([]).original_layout()
+    assert BIT.bit_layout([]) == BIT([], add, sub).original_layout()
     for length in intensities[INTENSITY]:
         lst = rand_int_list(length)
-        assert lst == BIT(lst).original_layout()
+        assert lst == BIT(lst, add, sub).original_layout()
 
 
 def test_sums():

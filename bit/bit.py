@@ -25,8 +25,12 @@ __getitem__ returns the prefix sums. Probably leave as is.
 [XXX] Handle negative indices. (done, double check and test pending)
 """
 from collections.abc import MutableSequence
-from .btypes import _T, _Gen, Iterable, List, Optional
-from .binaryops import BinaryOP, Add
+from operator import add
+from typing import TypeVar, Callable, Generator, Iterable, List, Optional
+
+# Can be anything.
+_T = TypeVar('_T')
+_Gen = Generator[int, None, None]
 
 
 # todo: big todo, formalize way binary ops are used.
@@ -36,15 +40,18 @@ class BIT:
     def __init__(
             self,
             iterable: Optional[Iterable[_T]] = None,
-            binary_op: BinaryOP = Add
+            binop: Callable[[_T, _T], _T] = add,
+            inverse_binop: Optional[Callable[[_T, _T], _T]] = None
             ):
-        """ BIT([iterable], [binary_op]) -- Initialize BIT.
+        """
+        BIT([iterable], [binary_op], [inverse_binop]) -- Initialize BIT.
 
         Binary op must be a commutative operator taking two values
         and returning one result.
         """
-        self._st = self.bit_layout(list(iterable or []), binary_op)
-        self.binop = binary_op
+        self._st = self.bit_layout(list(iterable or []), binop)
+        self.binop = binop
+        self.inverse = inverse_binop
 
     def __repr__(self) -> str:
         """ repr(B) -> str -- Return representation of
@@ -73,10 +80,11 @@ class BIT:
         # Set accumulator to value at index k. Doesn't
         # require it to be initialized to value that is
         # dependant on op.
+        binop = self.binop
         acc = self._st[index-1]
         index = index & (index - 1)
         for idx in self._follow_right(index):
-            acc = self.binop(acc, self._st[idx-1])
+            acc = binop(acc, self._st[idx-1])
         return acc
 
     # todo: use slice-iterable?
@@ -93,7 +101,10 @@ class BIT:
         index = index + length if index < 0 else index
         if index >= length or length == 0:
             raise IndexError("Index out of range.")
-        inverse_op = self.binop.inverse
+        inverse_op = self.inverse
+        if not inverse_op:
+            msg = "Inverse Binary Operator is needed in order to set an item. "
+            raise TypeError(msg)
         old = self._st[index]
         if index & 1:
             # odd indices hold prefix sums, go left
@@ -115,8 +126,9 @@ class BIT:
         if index >= length or length == 0:
             raise IndexError("Index out of range.")
 
+        binop = self.binop
         for idx in self._follow_left(index, length):
-            self._st[idx] = self.binop(self._st[idx], value)
+            self._st[idx] = binop(self._st[idx], value)
 
     def append(self, value: _T) -> None:
         """ B.append(value) -- Append a new value to the BIT.
@@ -205,8 +217,10 @@ class BIT:
 
         Coarse counting of steps tells me this is O(N).
         """
-        inverse_op = self.binop.inverse
-        length = len(self)
+        if not self.inverse:
+            msg = "Inverse Binary Operator is required for original_layout"
+            raise TypeError(msg)
+        inverse, length = self.inverse, len(self)
         # odd length doesn't have group of sums.
         # move downwards and start from there.
         # same logic here as in append.
@@ -215,13 +229,13 @@ class BIT:
         arr = [*self._st]
         for i in range(length, 0, -2):
             for step in self._powers_of_two(i):
-                arr[i-1] = inverse_op(arr[i-1], arr[i-1-step])
+                arr[i-1] = inverse(arr[i-1], arr[i-1-step])
         return arr
 
     @staticmethod
     def bit_layout(
             iterable: Iterable[_T],
-            binary_op: BinaryOP = Add
+            binary_op: Callable[[_T, _T], _T] = add
             ) -> List[_T]:
         """ Transform to fenwick (bit) representation. This
         loop makes serious sense when the intermediate
