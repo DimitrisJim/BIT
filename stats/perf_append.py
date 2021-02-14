@@ -10,7 +10,7 @@ def perf_append():
         runner.timeit(
             "{0}".format(size),
             stmt="b.append(0)",
-            setup=IMPORT_INIT.format(size - 1)
+            setup=IMPORT_INIT.format(size - 1),
         )
 
 

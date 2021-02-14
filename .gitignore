@@ -130,3 +130,6 @@ dmypy.json
 
 # Ignore vim swap files.
 *.swp
+
+# Ignore results directory.
+stats/results/
