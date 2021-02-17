@@ -4,12 +4,12 @@ import pyperf
 
 
 def perf_setitem():
-    """ todo: worse spot to setitem? """
+    """ Worse position coincides with worse position for update. """
     runner = pyperf.Runner()
     for size in SIZES:
         runner.timeit(
             "{0}".format(size),
-            stmt="b[0] = {0}".format(size-1),
+            stmt="b[0] = 0",
             setup=IMPORT_INIT.format(size)
         )
 

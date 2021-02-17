@@ -3,14 +3,9 @@
 """
 from pathlib import Path
 from subprocess import call
-from common import RESULTS_PATH
+from common import RESULTS_PATH, RES_FMT, OPS as ops
 
-RES_FMT = f"{RESULTS_PATH}{{0}}.json"
-CMD_FMT = "python stats/perf_{0}.py -o {file}"
-ops = [
-    'create', 'layout', 'append',
-    'getitem', 'setitem', 'update',
-]
+CMD_FMT = "python stats/perf_{0}.py -o {file} --quiet --fast"
 
 
 def rm_file(file_):
@@ -31,6 +26,7 @@ def run_all(operations=ops):
     """ Convenience, run all ops in ops. """
     for operation in operations:
         run(operation)
+
 
 if __name__ == "__main__":
     run_all(ops)
