@@ -3,8 +3,9 @@
 """
 from pathlib import Path
 from subprocess import call
+from common import RESULTS_PATH
 
-RES_FMT = "stats/results/{0}.json"
+RES_FMT = f"{RESULTS_PATH}{{0}}.json"
 CMD_FMT = "python stats/perf_{0}.py -o {file}"
 ops = [
     'create', 'layout', 'append',

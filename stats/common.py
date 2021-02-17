@@ -10,6 +10,7 @@ from bit import BIT
 from operator import add, sub
 """
 IMPORT_INIT = "\n".join([IMPORT, "b = BIT(range({0}), add, sub)"])
+# Relative to top level.
+RESULTS_PATH = 'stats/results/'
 
-
-__all__ = ['SIZES', 'IMPORT', 'IMPORT_INIT']
+__all__ = ['SIZES', 'IMPORT', 'IMPORT_INIT', 'RESULTS_PATH']
