@@ -52,6 +52,9 @@ class DummyPS(MutableSequence):
             sum_ = op(sum_, self.storage[i])
         return sum_
 
+    def __repr__(self):
+        return repr(self.storage)
+
     def __setitem__(self, index, value):
         self.storage[index] = value
 
@@ -64,11 +67,20 @@ class DummyPS(MutableSequence):
     def __len__(self):
         return len(self.storage)
 
+    def extend(self, iterable):
+        if isinstance(iterable, type(self)):
+            iterable = list(iterable.storage)
+        for v in iterable:
+            self.append(v)
+
     def append(self, value):
         self.storage.append(value)
 
     def insert(self, index, value):
         self.storage.insert(index, value)
+
+    def pop(self, index=-1):
+        return self.storage.pop(index)
 
 
 def rand_int_list(length, start=0, end=1_000_000):

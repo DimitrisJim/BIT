@@ -166,12 +166,27 @@ class BIT:
         """ B.pop([index]) -> item -- Remove and return item
         at given index (default -1). Raise IndexError if BIT
         is empty or index is out of range. """
-        index = index + len(self) if index < 0 else index
-        if index == len(self) - 1:
+        length = len(self)
+        index = index + length if index < 0 else index
+        if not self.inverse:
+            msg = "Inverse Binary Operator is required for pop."
+            raise TypeError(msg)
+        if index == length - 1:
+            # special case, can do O(logn) worse case
+            # and O(1) in half/cases of pop with index == -1.
             value = self._st.pop()
+            if length & 1:
+                return value
+            # need to find original value placed here
+            # todo: duplicate logic (here and setitem) move to function
+            inverse_op = self.inverse
+            for step in self._powers_of_two(index+1):
+                value = inverse_op(value, self._st[index - step])
             return value
 
-        # get original layout, remove from there, rebuild array.
+        # todo: O(N) for random index. This *might* be able to
+        # be improved but I'll need to think of it.
+        # Get original layout, remove from there, rebuild array.
         # underlying list takes care of wrong index.
         arr: List[_T] = self.original_layout()
         value = arr[index]
@@ -198,7 +213,7 @@ class BIT:
         appending elements from iterable. """
         if isinstance(iterable, type(self)):
             # don't use sums!
-            iterable = self.original_layout()
+            iterable = iterable.original_layout()
         for value in iterable:
             self.append(value)
 

@@ -2,6 +2,43 @@
 
 Binary Index Tree. WIP.
 
+## Operations:
+
+Link plots create from running `python stats`, describe why we see `O(N)` and `O(logN)` ops. 
+
+### Initialization:
+
+(or, `BIT.create`) O(N) Operation.
+
+##### Original layout:
+
+##### Append:
+
+##### Updating an items value:
+
+##### Replacing an item:
+
+##### Getting an item (prefix sum):
+
+### Plots:
+
+Linear complexity (create, layout)
+
+<p align="middle">
+  <img src="stats/plots/create.png" width="400" />
+  <img src="stats/plots/layout.png" width="400" /> 
+</p>
+
+Logarithmic complexity (append, update, setitem, getitem)
+
+<p align="middle">
+  <img src="stats/plots/append.png" width="300" />
+  <img src="stats/plots/update.png" width="300" />
+  <img src="stats/plots/setitem.png" width="300" />
+  <img src="stats/plots/getitem.png" width="300" /> 
+</p>
+
+
 ## Resources:
 
 A couple of useful resourses for anyone looking for more:

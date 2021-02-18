@@ -41,6 +41,12 @@ def test_layout_changes():
         lst = rand_int_list(length)
         assert lst == BIT(lst, add, sub).original_layout()
 
+    # check that we can't build original layout without having an
+    # inverse function defined:
+    b = BIT([1, 2, 3, 4, 5])
+    with pytest.raises(TypeError):
+        b.original_layout()
+
 
 def test_sums():
     for length in intensities[INTENSITY]:
@@ -98,7 +104,6 @@ def test_reversed():
     """ Don't reverse in place, return iterator yielding sums
     reversed.
     """
-    print("test_reversed")
     for length in intensities[INTENSITY]:
         bit, dummy = bit_dummy(rand_int_list(length))
 
@@ -112,7 +117,6 @@ def test_iadd_extend():
     every element in other. We toggle on calling __iadd__ or extend
     since both are drastically similar.
     """
-    print("test_iadd_extend")
     for length in intensities[INTENSITY]:
         bit, dummy = bit_dummy([])
         rnd_lst = rand_int_list(length)
@@ -131,6 +135,37 @@ def test_iadd_extend():
                 dummy += chunk
             toggle ^= 1
             assert bit[added] == dummy[added]
+
+    # check that extending with ourselves works fine.
+    for length in intensities[INTENSITY]:
+        bit, dummy = bit_dummy(rand_int_list(length))
+        bit.extend(bit)
+        dummy.extend(dummy)
+        for i in range(len(bit)):
+            assert bit[i] == dummy[i]
+
+
+@pytest.mark.timeout(timeouts[INTENSITY])
+def test_pop():
+    # Pop from end and assert item popped is the same.
+    for length in intensities[INTENSITY]:
+        bit, dummy = bit_dummy(rand_int_list(length))
+        while bit:
+            assert bit.pop() == dummy.pop()
+
+    # check the same for random indices, make sure sum
+    # until end is valid after pop.
+    for length in intensities[INTENSITY]:
+        bit, dummy = bit_dummy(rand_int_list(length))
+        while len(bit) > 1:
+            rand_index = randint(0, len(bit)-2)
+            assert bit.pop(rand_index) == dummy.pop(rand_index)
+            assert bit[-1] == dummy[-1]
+
+    # case where inverse isn't defined and we raise
+    with pytest.raises(TypeError):
+        b = BIT([1, 2, 3])
+        b.pop()
 
 
 @pytest.mark.timeout(timeouts[INTENSITY])
@@ -165,3 +200,16 @@ def test_set():
             dummy[rand_pos] = rand_value
             for i in range(rand_pos, len(bit)):
                 assert bit[i] == dummy[i]
+
+        # check index error is raised correctly.
+        b = BIT()
+        with pytest.raises(IndexError):
+            b[10] = 20
+        with pytest.raises(IndexError):
+            b[0] = 20
+
+        # check that setitem can't work without
+        # inverse function supplied:
+        b.append(20)
+        with pytest.raises(TypeError):
+            b[0] = 30
