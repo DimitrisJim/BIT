@@ -26,8 +26,8 @@ intensities = {
 }
 # timeouts used with pytest-timeout
 timeouts = {
-    # 2.5m tops
-    'quick': 150,
+    # 5m tops
+    'quick': 300,
     # 15m tops
     'thorough': 900,
     # None.
