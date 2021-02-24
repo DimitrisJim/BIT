@@ -26,10 +26,10 @@ intensities = {
 }
 # timeouts used with pytest-timeout
 timeouts = {
-    # 2m tops
-    'quick': 120,
+    # 2.5m tops
+    'quick': 150,
     # 15m tops
-    'thorough': 1200,
+    'thorough': 900,
     # None.
     'overkill': 0
 }
@@ -81,6 +81,9 @@ class DummyPS(MutableSequence):
 
     def pop(self, index=-1):
         return self.storage.pop(index)
+
+    def index(self, value):
+        return self.storage.index(value)
 
 
 def rand_int_list(length, start=0, end=1_000_000):

@@ -70,10 +70,7 @@ class BIT:
         Valid bounds for index range in [0, len(B)).
         """
         # handle indexing behaviour.
-        length = len(self)
-        index = index + length if index < 0 else index
-        if index >= length or length == 0:
-            raise IndexError("Index out of range.")
+        index = self._nmlz_index(index, len(self))
         # count *until* (including) index
         index = index + 1
 
@@ -98,9 +95,7 @@ class BIT:
         # to other positions and update.
         # adjust index if necessary
         length = len(self)
-        index = index + length if index < 0 else index
-        if index >= length or length == 0:
-            raise IndexError("Index out of range.")
+        index = self._nmlz_index(index, length)
         inverse_op = self.inverse
         if not inverse_op:
             msg = "Inverse Binary Operator is needed in order to set an item. "
@@ -122,9 +117,7 @@ class BIT:
         Raises IndexError if BIT is empty or index is out of bounds.
         """
         length = len(self)
-        index = index + length if index < 0 else index
-        if index >= length or length == 0:
-            raise IndexError("Index out of range.")
+        index = self._nmlz_index(index, length)
 
         binop = self.binop
         for idx in self._follow_left(index, length):
@@ -149,9 +142,8 @@ class BIT:
     def insert(self, index: int, value: _T) -> None:
         """ B.insert(index, value) -- Insert value before index. """
         # grab original layout, insert there, rebuild.
+        # original list will take care of index.
         arr: List[_T] = self.original_layout()
-
-        # takes care of handling index.
         arr.insert(index, value)
         self._st = self.bit_layout(arr)
 
@@ -167,7 +159,7 @@ class BIT:
         at given index (default -1). Raise IndexError if BIT
         is empty or index is out of range. """
         length = len(self)
-        index = index + length if index < 0 else index
+        index = self._nmlz_index(index, length)
         if not self.inverse:
             msg = "Inverse Binary Operator is required for pop."
             raise TypeError(msg)
@@ -194,13 +186,25 @@ class BIT:
         self._st = self.bit_layout(arr, self.binop)
         return value
 
-    # todo: fix return type.
     def remove(self, value: _T) -> None:
-        """ todo: Remove value from BIT. """
+        """ BIT.remove(value) -- Remove first occurence of value.
+        Raises ValueError if value is not present."""
+        self.pop(self.index(value))
 
-    # todo: fix return type.
-    def index(self, value: _T) -> None:
-        """ todo: Return index of given value. """
+    def index(
+            self,
+            value: _T,
+            start: int = 0,
+            stop: Optional[int] = None
+            ) -> int:
+        """ BIT.index(value) -- Return index of first occurence of
+        value. Raises ValueError if value is not present."""
+        # delegate to original list.
+        arr: List[_T] = self.original_layout()
+        # to shut mypy up.
+        if stop:
+            return arr.index(value, start, stop)
+        return arr.index(value, start)
 
     def __iadd__(self, iterable: Iterable[_T]) -> 'BIT':
         """ B += iterable -- In-place addition of elements in
@@ -217,9 +221,19 @@ class BIT:
         for value in iterable:
             self.append(value)
 
+    # todo: is a count method really sensible?
     def count(self, value: _T) -> int:
         """ todo: count sums or values? values, probably. """
         return 0
+
+    # Additional methods commonly defined on fenwick trees
+    def range_sum(self, i: int, j: int) -> _T:
+        """ todo: can be done more efficiently, plus checking for
+        j > i needs to be done."""
+        if not self.inverse:
+            msg = "Inverse operator required for range_sum. "
+            raise TypeError(msg)
+        return self.inverse(self[j], self[i])
 
     # Helpers.
     # todo: op is hardcoded. formalize.
@@ -246,6 +260,16 @@ class BIT:
             for step in self._powers_of_two(i):
                 arr[i-1] = inverse(arr[i-1], arr[i-1-step])
         return arr
+
+    @staticmethod
+    def _nmlz_index(index: int, length: int) -> int:
+        """ Normalize index, bringing it in [0, len(self)),
+        IndexError is raised if index is out of bounds.
+        """
+        index = index + length if index < 0 else index
+        if index >= length or length == 0:
+            raise IndexError("Index out of range.")
+        return index
 
     @staticmethod
     def bit_layout(
