@@ -10,15 +10,17 @@ Link plots create from running `python stats`, describe why we see `O(N)` and `O
 
 (or, `BIT.create`) O(N) Operation.
 
-##### Original layout:
+##### Getting the original layout:
 
-##### Append:
+##### Appending an item:
 
-##### Updating an items value:
+##### Updating an items original value:
 
-##### Replacing an item:
+##### Replacing an items original value:
 
 ##### Getting an item (prefix sum):
+
+##### Popping an item:
 
 ### Plots:
 

@@ -1,4 +1,4 @@
-* Graphy version:
+* BIT version:
 * Python version:
 * Operating System:
 

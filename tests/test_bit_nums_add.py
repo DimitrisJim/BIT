@@ -4,7 +4,7 @@
 in order to test against. This will most likely make things run
 quite slow here due to many O(N) ops.
 """
-from random import randint
+from random import randint, shuffle
 from operator import add, sub
 import pytest
 from test_support import (
@@ -213,3 +213,23 @@ def test_set():
         b.append(20)
         with pytest.raises(TypeError):
             b[0] = 30
+
+def test_index():
+    """ Call underlying list, should be fine, checking for sanity. """
+    for length in intensities[INTENSITY]:
+        rand_lst = rand_int_list(length)
+        bit, dummy = bit_dummy(rand_lst)
+
+        shuffle(rand_lst)
+        for v in rand_lst:
+            assert bit.index(v) == dummy.index(v)
+
+def test_remove():
+    """ Call underlying list, should be fine, checking for sanity. """
+    for length in intensities[INTENSITY]:
+        rand_lst = rand_int_list(length)
+        bit, dummy = bit_dummy(rand_lst)
+
+        shuffle(rand_lst)
+        for v in rand_lst:
+            assert bit.remove(v) == dummy.remove(v)
