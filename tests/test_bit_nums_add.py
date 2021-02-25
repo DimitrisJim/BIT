@@ -233,3 +233,12 @@ def test_remove():
         shuffle(rand_lst)
         for v in rand_lst:
             assert bit.remove(v) == dummy.remove(v)
+
+def test_range_sum():
+    for length in intensities[INTENSITY]:
+        bit, dummy = bit_dummy(rand_int_list(length))
+
+        for _ in range(length // 2):
+            i = randint(0, length - 2)
+            j = randint(i, length-1)
+            assert bit.range_sum(i, j) == dummy.range_sum(i, j)

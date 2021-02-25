@@ -3,26 +3,16 @@
 [TODO]: Explanations must be more thorough.
 [TODO]: Probably need to expand on set/get/del item in order to
         support slices. Range queries will be pretty with slicing.
-
-[XXX] Make append special case of insert? Insert, it seems likely, can't be
-implemented in O(logn) while append can. I'm leaning towards keeping them
-separate, that will make both more understandable and allow append to always
-be worse case O(logn).
-[XXX] Implement __iter__? MutableSequence.__iter__ uses old iteration protocol
-(calling __getitem__ until IndexError) which also suits us here since our
-__getitem__ returns the prefix sums. Probably leave as is.
-[XXX] Make a couple of helper functions for traversing left/right. There's
-      a lot of duplication currently going on.
-[XXX] Binop might need to be commutative and associative. Also, small-opt
-      by assigning it to a local variable. Used in many loops.
-[XXX] __setitem__ currently does the job of update. I forgot it temporarily,
-     is it better if insert took the role of update? I'm thinking an update
-     method would be better.
-
-      - update      -> update value.
-      - __setitem__ -> replace value.
-      - insert      -> insert new value.
-[XXX] Handle negative indices. (done, double check and test pending)
+[TODO]: Use sphinx documentation.
+[TODO]: Small opts, assign to local names.
+[XXX]: Make a BinOp abc class so operations that might require state
+       can have a defined interface? (And allow it to be passed somehow
+       to BIT class.)
+[XXX]: Implement __iter__? MutableSequence.__iter__ uses old iteratio
+       protocol (calling __getitem__ until IndexError) which also suit
+       us here since our __getitem__ returns the prefix sums. Probably
+       leave as is.
+[XXX]: Handle negative indices. (done, double check and test pending)
 """
 from collections.abc import MutableSequence
 from operator import add
@@ -46,8 +36,9 @@ class BIT:
         """
         BIT([iterable], [binary_op], [inverse_binop]) -- Initialize BIT.
 
-        Binary op must be a commutative operator taking two values
-        and returning one result.
+        Binary op must be an associative operator taking two values
+        and returning one result. By default, it is set to
+        operator add.
         """
         self._st = self.bit_layout(list(iterable or []), binop)
         self.binop = binop
@@ -66,13 +57,13 @@ class BIT:
 
     def __getitem__(self, index: int) -> _T:
         """ B[index] = value -- Get prefix sum until (including!) given
-        index. Raises IndexError if BIT is empty or index is out of bounds.
+        index.
+
+        Raises IndexError if BIT is empty or index is out of bounds.
         Valid bounds for index range in [0, len(B)).
         """
-        # handle indexing behaviour.
-        index = self._nmlz_index(index, len(self))
-        # count *until* (including) index
-        index = index + 1
+        # handle indexing behaviour, count *including* index.
+        index = self._nmlz_index(index, len(self)) + 1
 
         # Set accumulator to value at index k. Doesn't
         # require it to be initialized to value that is
@@ -80,63 +71,64 @@ class BIT:
         binop = self.binop
         acc = self._st[index-1]
         index = index & (index - 1)
-        for idx in self._follow_right(index):
+        for idx in self._c_one_lsb(index):
             acc = binop(acc, self._st[idx-1])
         return acc
 
     # todo: use slice-iterable?
-    # todo: inverse_op should depend on binop, formalize.
     def __setitem__(self, index: int, value: _T) -> None:
         """ B[index] = value -- Update value at given index.
+
         Raises IndexError if BIT is empty or index is out of bounds.
         """
         # get old value, remove old value from
         # position, insert new value and go along
         # to other positions and update.
         # adjust index if necessary
-        length = len(self)
+        length, storage = len(self), self._st
         index = self._nmlz_index(index, length)
-        inverse_op = self.inverse
-        if not inverse_op:
-            msg = "Inverse Binary Operator is needed in order to set an item. "
+        binop, inverse = self.binop, self.inverse
+        if not inverse:
+            msg = "Inverse Operator is required to set an item. "
             raise TypeError(msg)
-        old = self._st[index]
+        old = storage[index]
         if index & 1:
             # odd indices hold prefix sums, go left
             # and find original value for old.
-            for step in self._powers_of_two(index + 1):
-                old = inverse_op(old, self._st[index-step])
+            for step in self._c_zero_lsb(index + 1):
+                old = inverse(old, storage[index-step])
 
         # we have old and new. go right and update values.
-        for idx in self._follow_left(index, length):
-            self._st[idx] = inverse_op(self._st[idx], old)
-            self._st[idx] = self.binop(self._st[idx], value)
+        for idx in self._f_zero_lsb(index, length):
+            storage[idx] = inverse(storage[idx], old)
+            storage[idx] = binop(storage[idx], value)
 
     def update(self, index: int, value: _T) -> None:
         """ B.update(index, value) -- Update value at given index.
+
         Raises IndexError if BIT is empty or index is out of bounds.
         """
-        length = len(self)
+        storage, length = self._st, len(self)
         index = self._nmlz_index(index, length)
 
         binop = self.binop
-        for idx in self._follow_left(index, length):
-            self._st[idx] = binop(self._st[idx], value)
+        for idx in self._f_zero_lsb(index, length):
+            storage[idx] = binop(storage[idx], value)
 
     def append(self, value: _T) -> None:
         """ B.append(value) -- Append a new value to the BIT.
         Sums are updated automatically. """
-        length = len(self)
+        storage, length = self._st, len(self)
         # Index in which we will place new value is odd, can
         # just append.
         if length & 1:
             # O(logn) -- worse case manifests on powers of 2.
             # Needs more explaining, pass will-be len.
-            for step in self._powers_of_two(length + 1):
+            for step in self._c_zero_lsb(length + 1):
                 # careful, haven't added item so length
                 # must be decreased by one.
-                value = self.binop(value, self._st[length - step])
-        self._st.append(value)
+                value = self.binop(value, storage[length - step])
+        storage.append(value)
 
     # todo: could we somehow not be O(N)? -- think about it
     def insert(self, index: int, value: _T) -> None:
@@ -149,15 +141,18 @@ class BIT:
 
     # todo: use Union[int, slice]?
     def __delitem__(self, index: int) -> None:
-        """ del B[key] -- Remove item at given index. Raises
-        IndexError if BIT is empty or index is out of range.
+        """ del B[key] -- Remove item at given index.
+
+        Raises IndexError if BIT is empty or index is out of range.
         """
         _ = self.pop(index)
 
     def pop(self, index: int = -1) -> _T:
         """ B.pop([index]) -> item -- Remove and return item
-        at given index (default -1). Raise IndexError if BIT
-        is empty or index is out of range. """
+        at given index (default -1).
+
+        Raise IndexError if BIT is empty or index is out
+        of range. """
         length = len(self)
         index = self._nmlz_index(index, length)
         if not self.inverse:
@@ -166,14 +161,16 @@ class BIT:
         if index == length - 1:
             # special case, can do O(logn) worse case
             # and O(1) in half/cases of pop with index == -1.
-            value = self._st.pop()
+            storage = self._st
+
+            value = storage.pop()
             if length & 1:
                 return value
             # need to find original value placed here
             # todo: duplicate logic (here and setitem) move to function
             inverse_op = self.inverse
-            for step in self._powers_of_two(index+1):
-                value = inverse_op(value, self._st[index - step])
+            for step in self._c_zero_lsb(index+1):
+                value = inverse_op(value, storage[index - step])
             return value
 
         # todo: O(N) for random index. This *might* be able to
@@ -188,6 +185,7 @@ class BIT:
 
     def remove(self, value: _T) -> None:
         """ BIT.remove(value) -- Remove first occurence of value.
+
         Raises ValueError if value is not present."""
         self.pop(self.index(value))
 
@@ -198,7 +196,9 @@ class BIT:
             stop: Optional[int] = None
             ) -> int:
         """ BIT.index(value) -- Return index of first occurence of
-        value. Raises ValueError if value is not present."""
+        value.
+
+        Raises ValueError if value is not present."""
         # delegate to original list.
         arr: List[_T] = self.original_layout()
         # to shut mypy up.
@@ -227,24 +227,29 @@ class BIT:
         return 0
 
     # Additional methods commonly defined on fenwick trees
+    # todo: can be done more efficiently.
     def range_sum(self, i: int, j: int) -> _T:
-        """ todo: can be done more efficiently, plus checking for
-        j > i needs to be done."""
+        """ BIT.range_sum(i, j) -> value. Return the range sum
+        from i until j. Equivalent to self[j] - self[i].
+
+        Raises IndexError if j < i and TypeError if the
+        inverse function isn't defined."""
+        # We'll need inverse here.
+        if j < i:
+            raise IndexError("j must be > than i.")
         if not self.inverse:
             msg = "Inverse operator required for range_sum. "
             raise TypeError(msg)
         return self.inverse(self[j], self[i])
 
     # Helpers.
-    # todo: op is hardcoded. formalize.
     def original_layout(self) -> List[_T]:
-        """ Return the original layout used to build the
-        Binary Indexed Tree.
+        """ BIT.original_layout() -> List[items]. Return the original
+        items in the list as used to build the Binary Indexed Tree.
 
         This requires the inverse of the operator used to
-        construct the BIT originally.
-
-        Coarse counting of steps tells me this is O(N).
+        construct the BIT originally. TypeError is raised if
+        it isn't supplied.
         """
         if not self.inverse:
             msg = "Inverse Binary Operator is required for original_layout"
@@ -257,29 +262,20 @@ class BIT:
             length -= 1
         arr = [*self._st]
         for i in range(length, 0, -2):
-            for step in self._powers_of_two(i):
+            for step in self._c_zero_lsb(i):
                 arr[i-1] = inverse(arr[i-1], arr[i-1-step])
         return arr
-
-    @staticmethod
-    def _nmlz_index(index: int, length: int) -> int:
-        """ Normalize index, bringing it in [0, len(self)),
-        IndexError is raised if index is out of bounds.
-        """
-        index = index + length if index < 0 else index
-        if index >= length or length == 0:
-            raise IndexError("Index out of range.")
-        return index
 
     @staticmethod
     def bit_layout(
             iterable: Iterable[_T],
             binary_op: Callable[[_T, _T], _T] = add
             ) -> List[_T]:
-        """ Transform to fenwick (bit) representation. This
-        loop makes serious sense when the intermediate
-        representation in [tweakblogs] is understood.
+        """ BIT.bit_layout(iterable, [binary_op]) -> List[items].
+        Transform to fenwick (bit) representation.
         """
+        # This loop makes serious sense when the intermediate
+        # representation in [tweakblogs] is understood.
         arr = list(iterable)
         i, length = 1, len(arr)
         while i < length:
@@ -294,28 +290,38 @@ class BIT:
     # nicely yet. A single function centered around powers of
     # two seems (mentally for me at least) like the way to go.
     @staticmethod
-    def _follow_left(index: int, stop: int) -> _Gen:
-        """ Basically flipping left-most zero bits.  """
+    def _f_zero_lsb(index: int, stop: int) -> _Gen:
+        """ Flip zero set bits starting from LSB.  """
         while index < stop:
             yield index
             index |= index + 1
 
     @staticmethod
-    def _follow_right(index: int, stop: int = 0) -> _Gen:
-        """ Basically consuming any 1 set bits."""
+    def _c_one_lsb(index: int, stop: int = 0) -> _Gen:
+        """ Consuming set bits starting from LSB."""
         while index > stop:
             yield index
             index &= index - 1
 
     @staticmethod
-    def _powers_of_two(index: int, start: int = 2) -> _Gen:
+    def _c_zero_lsb(index: int, start: int = 2) -> _Gen:
         """ Yields powers of two that perfectly divide index.
-        We're basically consuming leftmost 0 bits in index.
+        Consuming unset bits starting from LSB.
         """
         while index & 1 == 0:
             yield start // 2
             start <<= 1
             index >>= 1
+
+    @staticmethod
+    def _nmlz_index(index: int, length: int) -> int:
+        """ Normalize index, bringing it in [0, len(self)),
+        IndexError is raised if index is out of bounds.
+        """
+        index = index + length if index < 0 else index
+        if index >= length or length == 0:
+            raise IndexError("Index out of range.")
+        return index
 
 
 # Register as virtual subclass.

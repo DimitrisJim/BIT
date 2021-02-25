@@ -22,6 +22,8 @@ Link plots create from running `python stats`, describe why we see `O(N)` and `O
 
 ##### Popping an item:
 
+##### Range Sum
+
 ### Plots:
 
 Linear complexity (create, layout)
