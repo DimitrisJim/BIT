@@ -13,7 +13,7 @@ intensities = {
     'quick': {
         randint(1, 10),
         randint(10, 100),
-        randint(100, 1000)
+        randint(100, 500)
     },
     'thorough': {
         randint(1000, 10000),
@@ -26,8 +26,8 @@ intensities = {
 }
 # timeouts used with pytest-timeout
 timeouts = {
-    # 5m tops
-    'quick': 300,
+    # 2m tops
+    'quick': 120,
     # 15m tops
     'thorough': 900,
     # None.
