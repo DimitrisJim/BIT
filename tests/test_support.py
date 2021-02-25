@@ -13,7 +13,7 @@ intensities = {
     'quick': {
         randint(1, 10),
         randint(10, 100),
-        randint(100, 1000)
+        randint(100, 500)
     },
     'thorough': {
         randint(1000, 10000),
@@ -26,8 +26,8 @@ intensities = {
 }
 # timeouts used with pytest-timeout
 timeouts = {
-    # 5m tops
-    'quick': 300,
+    # 2m tops
+    'quick': 120,
     # 15m tops
     'thorough': 900,
     # None.
@@ -39,8 +39,9 @@ class DummyPS(MutableSequence):
     """ The dumb version to find prefix sums. Wraps and
     delegates to a list. """
 
-    def __init__(self, iterable=None, op=add):
+    def __init__(self, iterable=None, op=add, inv=sub):
         self.binop = op
+        self.inverse = sub
         self.storage = list(iterable) or []
 
     def __getitem__(self, index):
@@ -85,6 +86,10 @@ class DummyPS(MutableSequence):
     def index(self, value):
         return self.storage.index(value)
 
+    def range_sum(self, i, j):
+        """ Sum from i to j. """
+        return self.inverse(self[j], self[i])
+
 
 def rand_int_list(length, start=0, end=1_000_000):
     """ Use random numbers from 0, 1_000_000. """
@@ -94,5 +99,7 @@ def rand_int_list(length, start=0, end=1_000_000):
 def bit_dummy(lst, binop=add, inverse=sub):
     return BIT(lst, binop, inverse), DummyPS(lst, binop)
 
+def bit_dummy_set(lst, binop=set.union, inverse=set.intersection):
+    return BIT(lst, binop, inverse), DummyPS(lst, binop, inverse)
 
 __all__ = ['intensities', 'DummyPS', 'rand_int_list', 'bit_dummy']
