@@ -111,7 +111,7 @@ def test_iadd_extend():
         added, toggle = 0, 0
         while added < length:
             # grab a random lengthed chunk,
-            chunk = rnd_lst[:randint(1, length)]
+            chunk = rnd_lst[:randint(length // 4, length)]
             added += len(chunk) - 1
             if toggle:
                 bit.extend(chunk)
