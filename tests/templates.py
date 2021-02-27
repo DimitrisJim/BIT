@@ -105,14 +105,12 @@ def test_iadd_extend():
     # since both are drastically similar.
     for length in intensities[INTENSITY]:
         bit, dummy = bit_dummy([], bf, ibf)
-        rnd_lst = gl(length)
 
-        # don't add to many chunks.
-        added, toggle = 0, 0
-        while added < length:
-            # grab a random lengthed chunk,
-            chunk = rnd_lst[:randint(length // 4, length)]
-            added += len(chunk) - 1
+        # add 50 chunks
+        toggle = 0
+        for i in range(50):
+            # with a max length of 500.
+            chunk = gl(max(length // 8, 500))
             if toggle:
                 bit.extend(chunk)
                 dummy.extend(chunk)
@@ -120,7 +118,7 @@ def test_iadd_extend():
                 bit += chunk
                 dummy += chunk
             toggle ^= 1
-            assert bit[added] == dummy[added]
+            assert bit[-1] == dummy[-1]
 
     # check that extending with ourselves works fine.
     for length in intensities[INTENSITY]:

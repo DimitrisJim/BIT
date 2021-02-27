@@ -13,7 +13,7 @@ intensities = {
     'quick': {
         randint(1, 10),
         randint(10, 100),
-        # randint(100, 500)
+        randint(100, 500)
     },
     'thorough': {
         randint(1000, 10000),
