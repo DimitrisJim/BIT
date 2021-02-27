@@ -26,8 +26,8 @@ intensities = {
 }
 # timeouts used with pytest-timeout
 timeouts = {
-    # 2m tops
-    'quick': 120,
+    # 3m tops
+    'quick': 180,
     # 15m tops
     'thorough': 900,
     # None.
@@ -41,7 +41,7 @@ class DummyPS(MutableSequence):
 
     def __init__(self, iterable=None, op=add, inv=sub):
         self.binop = op
-        self.inverse = sub
+        self.inverse = inv
         self.storage = list(iterable) or []
 
     def __getitem__(self, index):
@@ -60,7 +60,8 @@ class DummyPS(MutableSequence):
         self.storage[index] = value
 
     def update(self, index, value):
-        self.storage[index] += value
+        old_value = self.storage[index]
+        self.storage[index] = self.binop(old_value, value)
 
     def __delitem__(self, index):
         del self.storage[index]
@@ -95,11 +96,23 @@ def rand_int_list(length, start=0, end=1_000_000):
     """ Use random numbers from 0, 1_000_000. """
     return [randint(start, end) for _ in range(length)]
 
+int_add = add
+int_sub = sub
 
-def bit_dummy(lst, binop=add, inverse=sub):
-    return BIT(lst, binop, inverse), DummyPS(lst, binop)
 
-def bit_dummy_set(lst, binop=set.union, inverse=set.intersection):
+# For sets
+def rand_set_list(length):
+    lst = rand_int_list(length)
+    return [{i} for i in lst]
+
+set_union = set.union
+
+
+def bit_dummy(lst, binop, inverse):
     return BIT(lst, binop, inverse), DummyPS(lst, binop, inverse)
 
-__all__ = ['intensities', 'DummyPS', 'rand_int_list', 'bit_dummy']
+
+__all__ = [
+    'intensities', 'DummyPS', 'rand_int_list', 'bit_dummy',
+    'rand_set_list',
+]

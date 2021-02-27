@@ -134,10 +134,10 @@ class BIT:
     def insert(self, index: int, value: _T) -> None:
         """ B.insert(index, value) -- Insert value before index. """
         # grab original layout, insert there, rebuild.
-        # original list will take care of index.
+        # list will take care of index.
         arr: List[_T] = self.original_layout()
         arr.insert(index, value)
-        self._st = self.bit_layout(arr)
+        self._st = self.bit_layout(arr, self.binop)
 
     # todo: use Union[int, slice]?
     def __delitem__(self, index: int) -> None:
@@ -162,7 +162,6 @@ class BIT:
             # special case, can do O(logn) worse case
             # and O(1) in half/cases of pop with index == -1.
             storage = self._st
-
             value = storage.pop()
             if length & 1:
                 return value

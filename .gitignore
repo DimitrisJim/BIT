@@ -133,3 +133,6 @@ dmypy.json
 
 # Ignore results directory.
 stats/results/
+
+# Ignore any documents I add.
+*.pdf

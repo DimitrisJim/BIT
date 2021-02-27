@@ -33,17 +33,23 @@ floating point representation probably do apply).
 
 A key issue for that appears when trying to remove elements is that of [inverse functions][invfunc]. 
 
-For numeric:
+#### For numeric:
+
  - addition -> subtraction
  - multiplication -> division
 
-For bitwise operators:
+#### For bitwise operators:
 
  - xor -> xor (need to test this).
 
 the rest of the bitwise operators [don't seem to have inverses][bitinverse]
 
-todo: set ops.
+#### Set operators:
+
+If sets contained are unique, difference seems to be able to be used as the
+inverse of union. (Note: for multisets, this restriction shoulnd't apply.)
+
+For multisets, union and difference might be a candidate, though.
 
 [invfunc]: https://en.wikipedia.org/wiki/Inverse_function 
 [bitinverse]: https://en.wikipedia.org/wiki/Bitwise_operation#Inverses_and_solving_equations
