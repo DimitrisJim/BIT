@@ -1,10 +1,10 @@
 import pytest
 from random import randint, shuffle
-from test_support import bit_dummy, intensities, timeouts
+from support import bit_dummy, intensities, timeouts
 from bit import BIT
 ibf = None
-from test_support import int_add as bf
-from test_support import rand_int_list as gl
+from support import multiset_add as bf
+from support import rand_multiset_list as gl
 INTENSITY = 'quick'
 
 def test_sums():
@@ -35,7 +35,7 @@ def test_update():
     for length in intensities[INTENSITY]:
         bit, dummy = bit_dummy(gl(length), bf, ibf)
 
-        lst = gl(length)
+        lst = gl(max(20, length // 8))
         for value in lst:
             rand_index = randint(0, length-1)
             bit.update(rand_index, value)
@@ -69,9 +69,9 @@ def test_reversed():
         for i, j in zip(reversed(bit), reversed(dummy)):
             assert i == j
 
-from test_support import int_add as bf
-from test_support import int_sub as ibf
-from test_support import rand_int_list as gl
+from support import multiset_add as bf
+from support import multiset_sub as ibf
+from support import rand_multiset_list as gl
 INTENSITY = 'quick'
 
 def test_layout_changes():

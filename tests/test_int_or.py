@@ -3,8 +3,8 @@ from random import randint, shuffle
 from support import bit_dummy, intensities, timeouts
 from bit import BIT
 ibf = None
-from support import set_union as bf
-from support import rand_set_list as gl
+from support import int_or as bf
+from support import rand_int_list as gl
 INTENSITY = 'quick'
 
 def test_sums():

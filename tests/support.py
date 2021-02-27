@@ -3,8 +3,12 @@ in order to test against. This will most likely make things run
 quite slow here due to many O(N) ops.
 """
 from collections.abc import MutableSequence
+from collections import Counter
 from random import randint
-from operator import add, sub
+from decimal import Decimal as Dec
+from operator import (
+    add, sub, and_, or_, xor, mul, truediv
+)
 from bit import BIT
 
 
@@ -26,8 +30,8 @@ intensities = {
 }
 # timeouts used with pytest-timeout
 timeouts = {
-    # 3m tops
-    'quick': 180,
+    # 5m tops
+    'quick': 300,
     # 15m tops
     'thorough': 900,
     # None.
@@ -92,23 +96,54 @@ class DummyPS(MutableSequence):
         return self.inverse(self[j], self[i])
 
 
+# Ints.
 def rand_int_list(length, start=0, end=1_000_000):
     """ Use random numbers from 0, 1_000_000. """
     return [randint(start, end) for _ in range(length)]
 
+
 int_add = add
 int_sub = sub
+int_and = and_
+int_or = or_
+int_xor = xor
+int_mul = mul
 
 
-# For sets
+# Decimal.
+def rand_decimal_list(length, start=0, end=1_000_000):
+    return [Dec(randint(start, end)) for _ in range(length)]
+
+
+dec_add = add
+dec_sub = sub
+
+
+# Sets.
 def rand_set_list(length):
     lst = rand_int_list(length)
     return [{i} for i in lst]
 
+
 set_union = set.union
+set_intersection = set.intersection
+set_symmetric_difference = set.symmetric_difference
+
+
+# Multisets.
+def rand_multiset_list(length, start=0, end=1_000_000):
+    # transform number to str.
+    return [Counter(str(randint(start, end))) for _ in range(length)]
+
+
+multiset_add = Counter.__add__
+multiset_sub = Counter.__sub__
 
 
 def bit_dummy(lst, binop, inverse):
+    """ Create instances of BIT and dummy version with given list,
+    binary op and inverse binary op.
+    """
     return BIT(lst, binop, inverse), DummyPS(lst, binop, inverse)
 
 
