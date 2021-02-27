@@ -175,7 +175,7 @@ def test_set():
     for length in intensities[INTENSITY]:
         bit, dummy = bit_dummy(gl(length), bf, ibf)
         # set 150 random elements.
-        lst = gl(max(150, length))
+        lst = gl(min(150, length))
 
         for rand_value in lst:
             rand_pos = randint(0, len(bit) - 1)
