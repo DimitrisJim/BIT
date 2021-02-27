@@ -3,7 +3,7 @@ from random import randint, shuffle
 from support import bit_dummy, intensities, timeouts
 from bit import BIT
 ibf = None
-from support import set_union as bf
+from support import set_symmetric_difference as bf
 from support import rand_set_list as gl
 INTENSITY = 'quick'
 
