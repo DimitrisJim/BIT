@@ -1,14 +1,11 @@
-# Template for generating test methods that require both binop and
-# inverse binop.
-# Realized by calling format on it and passing a mapping containing
-# the following keys:
-#
-# todo: explain keys.
-binop_only_meths = """
+import pytest
+from random import randint, shuffle
+from support import bit_dummy, intensities, timeouts
+from bit import BIT
 ibf = None
-{binop}
-{gen_list}
-INTENSITY = '{intensity}'
+from support import multiset_add as bf
+from support import rand_multiset_list as gl
+INTENSITY = 'quick'
 
 def test_sums():
     for length in intensities[INTENSITY]:
@@ -71,19 +68,11 @@ def test_reversed():
 
         for i, j in zip(reversed(bit), reversed(dummy)):
             assert i == j
-"""
 
-# Template for generating test methods that require both binop and
-# inverse binop.
-# Realized by calling format on it and passing a mapping containing
-# the following keys:
-#
-# todo: explain keys.
-inverse_req_meths = """
-{binop}
-{inverse}
-{gen_list}
-INTENSITY = '{intensity}'
+from support import multiset_add as bf
+from support import multiset_sub as ibf
+from support import rand_multiset_list as gl
+INTENSITY = 'quick'
 
 def test_layout_changes():
     assert BIT.bit_layout([]) == BIT([], bf, ibf).original_layout()
@@ -226,6 +215,3 @@ def test_range_sum():
             index_a = randint(0, length - 2)
             index_b = randint(index_a, length-1)
             assert bit.range_sum(index_a, index_b) == dummy.range_sum(index_a, index_b)
-"""
-
-__all__ = ['binop_only_meths', 'inverse_req_meths']
