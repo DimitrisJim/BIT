@@ -4,8 +4,9 @@ quite slow here due to many O(N) ops.
 """
 from collections.abc import MutableSequence
 from collections import Counter
-from random import randint
+from random import randint, random
 from decimal import Decimal as Dec
+from fractions import Fraction
 from operator import (
     add, sub, and_, or_, xor, mul, truediv
 )
@@ -118,6 +119,15 @@ def rand_decimal_list(length, start=0, end=1_000_000):
 dec_add = add
 dec_sub = sub
 
+
+# Fractions
+def rand_frac_list(length, start=0, end=1_000):
+    return [Fraction(randint(start, end) / 2) for _ in range(length)]
+
+
+frac_add = add
+frac_sub = sub
+frac_mul = mul
 
 # Sets.
 def rand_set_list(length):
