@@ -82,6 +82,22 @@ test_files = [
         'gen_list': ts_fmt_gl.format('rand_decimal_list'),
         'intensity': 'quick',
     },
+    # Fractional: add/sub
+    {
+        'name': 'tests/test_frac_add_sub.py',
+        'binop': ts_fmt_bf.format('frac_add'),
+        'inverse': ts_fmt_ibf.format('frac_sub'),
+        'gen_list': ts_fmt_gl.format('rand_frac_list'),
+        'intensity': 'quick',
+    },
+    # Fractional: mul
+    {
+        'name': 'tests/test_frac_mul.py',
+        'binop': ts_fmt_bf.format('frac_mul'),
+        'gen_list': ts_fmt_gl.format('rand_frac_list'),
+        'intensity': 'quick',
+    },
+
 ]
 
 
