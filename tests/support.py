@@ -89,8 +89,8 @@ class DummyPS(MutableSequence):
     def pop(self, index=-1):
         return self.storage.pop(index)
 
-    def index(self, value):
-        return self.storage.index(value)
+    def index(self, *args):
+        return self.storage.index(*args)
 
     def range_sum(self, i, j):
         """ Sum from i to j. """

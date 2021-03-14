@@ -4,20 +4,20 @@
 [TODO]: Probably need to expand on set/get/del item in order to
         support slices. Range queries will be pretty with slicing.
 [TODO]: Use sphinx documentation.
-[TODO]: Small opts, assign to local names.
 [XXX]: Make a BinOp abc class so operations that might require state
        can have a defined interface? (And allow it to be passed somehow
        to BIT class.)
-[XXX]: Implement __iter__? MutableSequence.__iter__ uses old iteratio
-       protocol (calling __getitem__ until IndexError) which also suit
+[XXX]: Implement __iter__? MutableSequence.__iter__ uses old iteration
+       protocol (calling __getitem__ until IndexError) which also suits
        us here since our __getitem__ returns the prefix sums. Probably
        leave as is.
 [XXX]: Handle negative indices. (done, double check and test pending)
 """
 from collections.abc import MutableSequence
 from operator import add
-from typing import TypeVar, Callable, Generator, Iterable, List, Optional
-
+from typing import (
+    TypeVar, Callable, Generator, Iterable, List, Optional, Union
+)
 # Can be anything.
 _T = TypeVar('_T')
 _Gen = Generator[int, None, None]
@@ -55,25 +55,27 @@ class BIT:
         Binary Indexed Tree. """
         return len(self._st)
 
-    def __getitem__(self, index: int) -> _T:
-        """ B[index] = value -- Get prefix sum until (including!) given
+    def __getitem__(self, index: Union[int, slice]) -> _T:
+        """ B[index] -> value. Get prefix sum until (including!) given
         index.
 
         Raises IndexError if BIT is empty or index is out of bounds.
         Valid bounds for index range in [0, len(B)).
         """
-        # handle indexing behaviour, count *including* index.
-        index = self._nmlz_index(index, len(self)) + 1
-
-        # Set accumulator to value at index k. Doesn't
-        # require it to be initialized to value that is
-        # dependant on op.
-        binop = self.binop
-        acc = self._st[index-1]
-        index = index & (index - 1)
-        for idx in self._c_one_lsb(index):
-            acc = binop(acc, self._st[idx-1])
-        return acc
+        if isinstance(index, slice):
+            # handle indices and call range_sum
+            length = len(self)
+            start, end = index.start, index.stop
+            if start is None:
+                start = 0
+            else:
+                start = start + length if start < 0 else start
+            if end is None:
+                end = length - 1
+            else:
+                end = end + length if end < 0 else end
+            return self.range_sum(start, end)
+        return self.prefix_sum(index)
 
     # todo: use slice-iterable?
     def __setitem__(self, index: int, value: _T) -> None:
@@ -220,26 +222,43 @@ class BIT:
         for value in iterable:
             self.append(value)
 
-    # todo: is a count method really sensible?
-    def count(self, value: _T) -> int:
-        """ todo: count sums or values? values, probably. """
-        return 0
-
     # Additional methods commonly defined on fenwick trees
     # todo: can be done more efficiently.
-    def range_sum(self, i: int, j: int) -> _T:
+    def range_sum(self, i: int = 0, j: Optional[int] = None) -> _T:
         """ BIT.range_sum(i, j) -> value. Return the range sum
         from i until j. Equivalent to self[j] - self[i].
 
         Raises IndexError if j < i and TypeError if the
         inverse function isn't defined."""
         # We'll need inverse here.
+        if j is None:
+            j = len(self) - 1
         if j < i:
             raise IndexError("j must be > than i.")
         if not self.inverse:
             msg = "Inverse operator required for range_sum. "
             raise TypeError(msg)
         return self.inverse(self[j], self[i])
+
+    def prefix_sum(self, index: int) -> _T:
+        """ B.prefix_sum(index) -> value. Get prefix sum until (including!) given
+        index.
+
+        Raises IndexError if BIT is empty or index is out of bounds.
+        Valid bounds for index range in [0, len(B)).
+        """
+        # handle indexing behaviour, count *including* index.
+        index = self._nmlz_index(index, len(self)) + 1
+
+        # Set accumulator to value at index k. Doesn't
+        # require it to be initialized to value that is
+        # dependant on op.
+        binop = self.binop
+        acc = self._st[index-1]
+        index = index & (index - 1)
+        for idx in self._c_one_lsb(index):
+            acc = binop(acc, self._st[idx-1])
+        return acc
 
     # Helpers.
     def original_layout(self) -> List[_T]:
