@@ -153,6 +153,19 @@ def test_pop():
 
 
 @pytest.mark.timeout(timeouts[INTENSITY])
+def test__delitem__():
+    # This just calls pop again, so don't go through the same things
+    # that have already been done in pop.
+    for length in intensities[INTENSITY]:
+        bit, dummy = bit_dummy(gl(length), bf, ibf)
+        while len(bit) > 1:
+            rand_index = randint(0, len(bit)-2)
+            del bit[rand_index]
+            del dummy[rand_index]
+            assert bit[-1] == dummy[-1]
+
+
+@pytest.mark.timeout(timeouts[INTENSITY])
 def test_insert():
     # Insert in random positions and check the sums are
     # correct.
@@ -207,6 +220,11 @@ def test_index():
         shuffle(rand_lst)
         for v in rand_lst:
             assert bit.index(v) == dummy.index(v)
+       
+        length = len(rand_lst)
+        for v in rand_lst[:5]:
+            assert bit.index(v, start=0, stop= length * 100) == dummy.index(v, 0, length * 100)
+
 
 def test_remove():
     ### Call underlying list, should be fine, checking for sanity.
@@ -226,6 +244,31 @@ def test_range_sum():
             index_a = randint(0, length - 2)
             index_b = randint(index_a, length-1)
             assert bit.range_sum(index_a, index_b) == dummy.range_sum(index_a, index_b)
+
+    # check that we raise for some odd values
+    with pytest.raises(TypeError):
+        b = BIT(range(1))
+        b.range_sum()
+    with pytest.raises(IndexError):
+        b = BIT(range(10))
+        b.range_sum(8, 4)
+
+
+def test__getitem__slice():
+    for length in intensities[INTENSITY]:
+        lst = gl(length)
+        bit1, bit2 = BIT(lst, bf, ibf), BIT(lst, bf, ibf)
+
+        for _ in range(length // 2):
+            index_a = randint(0, length - 2)
+            index_b = randint(index_a, length-1)
+            # we really just need to check that we handle the slices right
+            assert bit1[index_a:index_b] == bit2.range_sum(index_a, index_b)
+
+        # check some edge cases
+        assert bit1[:] == bit2.range_sum()
+        assert bit1[:len(bit1)-1] == bit2.range_sum(j=len(bit2) - 1)
+        assert bit1[len(bit1) // 2:] == bit2.range_sum(i=len(bit2) // 2)
 """
 
 __all__ = ['binop_only_meths', 'inverse_req_meths']
