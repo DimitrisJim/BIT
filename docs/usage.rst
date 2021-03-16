@@ -1,7 +1,6 @@
-=====
 Usage
 =====
 
 To use BIT in a project::
 
-    import bit
+    from bit import BIT
