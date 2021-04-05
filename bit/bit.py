@@ -32,35 +32,56 @@ class BIT:
             iterable: Optional[Iterable[_T]] = None,
             binop: Callable[[_T, _T], _T] = add,
             inverse_binop: Optional[Callable[[_T, _T], _T]] = None
-            ):
+    ):
         """
-        BIT([iterable], [binary_op], [inverse_binop]) -- Initialize BIT.
+        Initialize a new Binary Indexed Tree with an optional iterable.
 
-        Binary op must be an associative operator taking two values
-        and returning one result. By default, it is set to
-        operator add.
+        >>> BIT(range(10))
+        [0, 1, 2, 6, 4, 9, 6, 28, 8, 17]
+
+        Binary operator ``binop`` must be an associative operator taking two values
+        and returning one result. By default, it is set to ``operator.add``. If an
+        inverse binary operator ``inverse_binop`` is supplied, it can be used to
+        restructure the initial array as well as support more methods.
+
+        :complexity: :math:`O(n)`
         """
         self._st = self.bit_layout(list(iterable or []), binop)
         self.binop = binop
         self.inverse = inverse_binop
 
     def __repr__(self) -> str:
-        """ repr(B) -> str -- Return representation of
-        Binary Index Tree. """
+        """ Return a sensible representation of the
+        Binary Index Tree. 
+
+        :complexity: `O(N)`
+        """
         # delegate to list, takes care of printing really big lists.
+        # don't return original, it requires inverse op.
         return repr(self._st)
 
     def __len__(self) -> int:
-        """ len(B) -> int -- Return number of elements in
-        Binary Indexed Tree. """
+        """ Return the number of elements in the
+        Binary Indexed Tree. 
+
+        :complexity: :math:`O(1)`
+        """
         return len(self._st)
 
     def __getitem__(self, index: Union[int, slice]) -> _T:
-        """ B[index] -> value. Get prefix sum until (including!) given
-        index.
+        """ Return the prefix sum (or prefix ``<binop>``) until (including!) the given 
+        index. ``BIT.__getitem__`` is shorthand for ``BIT.prefix_sum(i)``, both behave
+        in exactly the same way:
 
-        Raises IndexError if BIT is empty or index is out of bounds.
-        Valid bounds for index range in [0, len(B)).
+        >>> b = BIT(range(10))
+        >>> b[9]
+        45
+        >>> b[9] == b.prefix_sum(9)
+        True
+
+        :complexity: :math:`O(\log{}n)`
+        :raises IndexError: If BIT is empty or index is out of bounds. Valid bounds for index 
+                            are in range ``[0, len(B))``.
         """
         if isinstance(index, slice):
             # handle indices and call range_sum
@@ -79,9 +100,17 @@ class BIT:
 
     # todo: use slice-iterable?
     def __setitem__(self, index: int, value: _T) -> None:
-        """ B[index] = value -- Update value at given index.
+        """ Replaces the value originally located at index ``index`` with a
+        new value. In order to do this, a sensible ``inverse_binop`` is required. 
 
-        Raises IndexError if BIT is empty or index is out of bounds.
+        >>> b = BIT(range(10), inverse_binop = int.__sub__)
+        >>> b[0] = 10
+        >>> b.original_layout()
+        [10, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+        :complexity: :math:`O(\log{}n)`
+        :raises IndexError: If Binary Indexed Tree is empty or index is out of bounds.
+        :raises TypeError: If ``inverse_binop`` hasn't been supplied.
         """
         # get old value, remove old value from
         # position, insert new value and go along
@@ -195,7 +224,7 @@ class BIT:
             value: _T,
             start: int = 0,
             stop: Optional[int] = None
-            ) -> int:
+    ) -> int:
         """ BIT.index(value) -- Return index of first occurence of
         value.
 
@@ -225,11 +254,20 @@ class BIT:
     # Additional methods commonly defined on fenwick trees
     # todo: can be done more efficiently.
     def range_sum(self, i: int = 0, j: Optional[int] = None) -> _T:
-        """ BIT.range_sum(i, j) -> value. Return the range sum
-        from i until j. Equivalent to self[j] - self[i].
+        """ Return the prefix sum (or prefix ``<binop>``) until (including!) the given 
+        index. ``BIT.__getitem__`` is shorthand for ``BIT.prefix_sum(i)``, both behave
+        in exactly the same way:
 
-        Raises IndexError if j < i and TypeError if the
-        inverse function isn't defined."""
+        >>> b = BIT(range(10))
+        >>> b.prefix_sum(9)
+        45
+        >>> b.prefix_sum(9) == b[9]
+        True
+
+        :complexity: :math:`O(\log{}n)`
+        :raises IndexError: If BIT is empty or index is out of bounds. Valid bounds for index 
+                            are in range ``[0, len(B))``.
+        """
         # We'll need inverse here.
         if j is None:
             j = len(self) - 1
@@ -288,7 +326,7 @@ class BIT:
     def bit_layout(
             iterable: Iterable[_T],
             binary_op: Callable[[_T, _T], _T] = add
-            ) -> List[_T]:
+    ) -> List[_T]:
         """ BIT.bit_layout(iterable, [binary_op]) -> List[items].
         Transform to fenwick (bit) representation.
         """

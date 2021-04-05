@@ -34,18 +34,6 @@ Note that there's a subtle difference between `update` and `__setitem__`. `updat
 Binary Indexed Tree (BIT) Class
 ===============================
 
-.. py:class:: BIT(iterable=None, binop=operator.add, inverse_binop=None)
-
-   Binary Indexed Tree (BIT) commonly known as a Fenwick Tree. With no arguments,
-   creates a new empty binary indexed tree with `operator.add` as the default binary
-   operator. The `iterable` parameter, if supplied, should be an iterable for which
-   `binop` is sensible.
-
-   :param Iterable iterable: An iterable object from which to initialized the binary
-                             indexed Tree.
-   :param Callable binop: The binary operator to be used.
-   :param Callable inverse_binop: The inverse binary operator.
-
-   .. py:method:: update(index: int, value) -> None
-
-       Update value at given index,
+.. autoclass:: bit.BIT
+    :members:
+    :special-members: __init__, __getitem__, __setitem__
