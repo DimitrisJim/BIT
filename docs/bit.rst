@@ -11,17 +11,18 @@ The class requires a sensible binary operator defined for the type of the values
 Simple Example
 ==============
 
-The simplest example would initialize a binary indexed tree from a given iterable and query the object through `__getitem__` or `prefix_sum`. For example:
+The simplest example would initialize a binary indexed tree from a given iterable and query the 
+object through `__getitem__` or `prefix_sum`. For example::
 
->>> from bit import BIT
->>> b = BIT(range(50))   # use operator.add by default
->>> b[-1]   # sum until 50
-1225
->>> b[25]   # sum until 25
-325
->>> # prefix_sum is the same as __getitem__
->>> b.prefix_sum(49) == b.prefix_sum(-1) == b[-1]
-True
+    >>> from bit import BIT
+    >>> b = BIT(range(50))   # use operator.add by default
+    >>> b[-1]   # sum until 50
+    1225
+    >>> b[25]   # sum until 25
+    325
+    >>> # prefix_sum is the same as __getitem__
+    >>> b.prefix_sum(49) == b.prefix_sum(-1) == b[-1]
+    True
 
 Without supplying the inverse operator, updating the value at a given index is also possible via `update`:
 
@@ -37,3 +38,4 @@ Binary Indexed Tree (BIT) Class
 .. autoclass:: bit.BIT
     :members:
     :special-members: __init__, __getitem__, __setitem__
+            

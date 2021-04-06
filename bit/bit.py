@@ -15,9 +15,8 @@
 """
 from collections.abc import MutableSequence
 from operator import add
-from typing import (
-    TypeVar, Callable, Generator, Iterable, List, Optional, Union
-)
+from typing import (TypeVar, Callable, Generator, Iterable, List, Optional,
+                    Union)
 # Can be anything.
 _T = TypeVar('_T')
 _Gen = Generator[int, None, None]
@@ -26,23 +25,21 @@ _Gen = Generator[int, None, None]
 # todo: big todo, formalize way binary ops are used.
 class BIT:
     """ Binary Indexed Tree, commonly known as a Fenwick Tree. """
-
-    def __init__(
-            self,
-            iterable: Optional[Iterable[_T]] = None,
-            binop: Callable[[_T, _T], _T] = add,
-            inverse_binop: Optional[Callable[[_T, _T], _T]] = None
-    ):
+    def __init__(self,
+                 iterable: Optional[Iterable[_T]] = None,
+                 binop: Callable[[_T, _T], _T] = add,
+                 inverse_binop: Optional[Callable[[_T, _T], _T]] = None):
         """
         Initialize a new Binary Indexed Tree with an optional iterable.
 
         >>> BIT(range(10))
         [0, 1, 2, 6, 4, 9, 6, 28, 8, 17]
 
-        Binary operator ``binop`` must be an associative operator taking two values
-        and returning one result. By default, it is set to ``operator.add``. If an
-        inverse binary operator ``inverse_binop`` is supplied, it can be used to
-        restructure the initial array as well as support more methods.
+        Binary operator ``binop`` must be an associative operator taking two
+        values and returning one result. By default, it is set to
+        ``operator.add``. If an inverse binary operator ``inverse_binop``
+        is supplied, it can be used to restructure the initial array as well
+        as support more methods.
 
         :complexity: :math:`O(n)`
         """
@@ -52,7 +49,7 @@ class BIT:
 
     def __repr__(self) -> str:
         """ Return a sensible representation of the
-        Binary Index Tree. 
+        Binary Index Tree.
 
         :complexity: `O(N)`
         """
@@ -62,16 +59,16 @@ class BIT:
 
     def __len__(self) -> int:
         """ Return the number of elements in the
-        Binary Indexed Tree. 
+        Binary Indexed Tree.
 
         :complexity: :math:`O(1)`
         """
         return len(self._st)
 
     def __getitem__(self, index: Union[int, slice]) -> _T:
-        """ Return the prefix sum (or prefix ``<binop>``) until (including!) the given 
-        index. ``BIT.__getitem__`` is shorthand for ``BIT.prefix_sum(i)``, both behave
-        in exactly the same way:
+        """ Return the prefix sum until (including!) the given
+        index. ``BIT.__getitem__`` is shorthand for ``BIT.prefix_sum(i)``, both
+        behave in exactly the same way:
 
         >>> b = BIT(range(10))
         >>> b[9]
@@ -80,8 +77,9 @@ class BIT:
         True
 
         :complexity: :math:`O(\log{}n)`
-        :raises IndexError: If BIT is empty or index is out of bounds. Valid bounds for index 
-                            are in range ``[0, len(B))``.
+        :raises IndexError: If BIT is empty or index is out of bounds.
+                            Valid bounds for index are in range
+                            ``[0, len(B))``.
         """
         if isinstance(index, slice):
             # handle indices and call range_sum
@@ -100,8 +98,8 @@ class BIT:
 
     # todo: use slice-iterable?
     def __setitem__(self, index: int, value: _T) -> None:
-        """ Replaces the value originally located at index ``index`` with a
-        new value. In order to do this, a sensible ``inverse_binop`` is required. 
+        """ Replaces the value originally located at index ``index`` with a new
+        value. In order to do this, a sensible ``inverse_binop`` is required.
 
         >>> b = BIT(range(10), inverse_binop = int.__sub__)
         >>> b[0] = 10
@@ -109,7 +107,7 @@ class BIT:
         [10, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
         :complexity: :math:`O(\log{}n)`
-        :raises IndexError: If Binary Indexed Tree is empty or index is out of bounds.
+        :raises IndexError: If BIT is empty or index is out of bounds.
         :raises TypeError: If ``inverse_binop`` hasn't been supplied.
         """
         # get old value, remove old value from
@@ -127,7 +125,7 @@ class BIT:
             # odd indices hold prefix sums, go left
             # and find original value for old.
             for step in self._c_zero_lsb(index + 1):
-                old = inverse(old, storage[index-step])
+                old = inverse(old, storage[index - step])
 
         # we have old and new. go right and update values.
         for idx in self._f_zero_lsb(index, length):
@@ -135,9 +133,17 @@ class BIT:
             storage[idx] = binop(storage[idx], value)
 
     def update(self, index: int, value: _T) -> None:
-        """ B.update(index, value) -- Update value at given index.
+        """ Updates the value at given index. This does not replace the original
+        value that was placed there; the `value` supplied is applied to what
+        was originally there by using `binop`.
 
-        Raises IndexError if BIT is empty or index is out of bounds.
+        >>> b = BIT(range(10), inverse_binop = int.__sub__)
+        >>> b.update(5, 10)
+        >>> b.original_layout()
+        [0, 1, 2, 3, 4, 15, 6, 7, 8, 9]
+
+        :complexity: :math:`O(\log{}n)`
+        :raises IndexError: If BIT is empty or index is out of bounds.
         """
         storage, length = self._st, len(self)
         index = self._nmlz_index(index, length)
@@ -147,8 +153,17 @@ class BIT:
             storage[idx] = binop(storage[idx], value)
 
     def append(self, value: _T) -> None:
-        """ B.append(value) -- Append a new value to the BIT.
-        Sums are updated automatically. """
+        """ Append a new value to the BIT.
+
+        >>> b = BIT(range(10), inverse_binop = int.__sub__)
+        >>> b.append(10)
+        >>> b[10]
+        55
+        >>> b.original_layout()
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+        :complexity: :math:`O(\log{}n)`
+        """
         storage, length = self._st, len(self)
         # Index in which we will place new value is odd, can
         # just append.
@@ -163,7 +178,16 @@ class BIT:
 
     # todo: could we somehow not be O(N)? -- think about it
     def insert(self, index: int, value: _T) -> None:
-        """ B.insert(index, value) -- Insert value before index. """
+        """ Insert value before index, requires ``inverse_binop`` be defined.
+
+        >>> b = BIT(range(5), inverse_binop = int.__sub__)
+        >>> prev_sum = b[4]
+        >>> b.insert(0, 50)
+        >>> prev_sum + 50 == b[5]
+        True
+
+        :complexity: :math:`O(n)`
+        """
         # grab original layout, insert there, rebuild.
         # list will take care of index.
         arr: List[_T] = self.original_layout()
@@ -172,9 +196,16 @@ class BIT:
 
     # todo: use Union[int, slice]?
     def __delitem__(self, index: int) -> None:
-        """ del B[key] -- Remove item at given index.
+        """ Deletes item at given index. ``inverse_binop`` is required
+        in order to perform the deletion.
 
-        Raises IndexError if BIT is empty or index is out of range.
+        >>> b = BIT(range(5), inverse_binop = int.__sub__)
+        >>> del b[0]
+        >>> b.original_layout()
+        [1, 2, 3, 4]
+
+        :complexity: :math: `O(n)`
+        :raises IndexError: If BIT is empty or index is out of range.
         """
         _ = self.pop(index)
 
@@ -182,8 +213,21 @@ class BIT:
         """ B.pop([index]) -> item -- Remove and return item
         at given index (default -1).
 
-        Raise IndexError if BIT is empty or index is out
-        of range. """
+        >>> b = BIT(range(5), inverse_binop = int.__sub__)
+        >>> b.pop()
+        4
+        >>> b.pop()
+        3
+        >>> b.pop()
+        2
+        >>> b.pop()
+        1
+        >>> b.pop()
+        0
+
+        :complexity: :math: `O(n)`
+        :raises IndexError: If BIT is empty or index is out of range.
+        """
         length = len(self)
         index = self._nmlz_index(index, length)
         if not self.inverse:
@@ -199,7 +243,7 @@ class BIT:
             # need to find original value placed here
             # todo: duplicate logic (here and setitem) move to function
             inverse_op = self.inverse
-            for step in self._c_zero_lsb(index+1):
+            for step in self._c_zero_lsb(index + 1):
                 value = inverse_op(value, storage[index - step])
             return value
 
@@ -219,12 +263,10 @@ class BIT:
         Raises ValueError if value is not present."""
         self.pop(self.index(value))
 
-    def index(
-            self,
-            value: _T,
-            start: int = 0,
-            stop: Optional[int] = None
-    ) -> int:
+    def index(self,
+              value: _T,
+              start: int = 0,
+              stop: Optional[int] = None) -> int:
         """ BIT.index(value) -- Return index of first occurence of
         value.
 
@@ -254,9 +296,9 @@ class BIT:
     # Additional methods commonly defined on fenwick trees
     # todo: can be done more efficiently.
     def range_sum(self, i: int = 0, j: Optional[int] = None) -> _T:
-        """ Return the prefix sum (or prefix ``<binop>``) until (including!) the given 
-        index. ``BIT.__getitem__`` is shorthand for ``BIT.prefix_sum(i)``, both behave
-        in exactly the same way:
+        """ Return the prefix sum (or prefix ``<binop>``) until (including!) the
+        given index. ``BIT.__getitem__`` is shorthand for ``BIT.prefix_sum(i)``
+        both behave in exactly the same way:
 
         >>> b = BIT(range(10))
         >>> b.prefix_sum(9)
@@ -265,8 +307,8 @@ class BIT:
         True
 
         :complexity: :math:`O(\log{}n)`
-        :raises IndexError: If BIT is empty or index is out of bounds. Valid bounds for index 
-                            are in range ``[0, len(B))``.
+        :raises IndexError: If BIT is empty or index is out of bounds.
+                            Valid bounds for index are in range ``[0, len(B))``
         """
         # We'll need inverse here.
         if j is None:
@@ -292,10 +334,10 @@ class BIT:
         # require it to be initialized to value that is
         # dependant on op.
         binop = self.binop
-        acc = self._st[index-1]
+        acc = self._st[index - 1]
         index = index & (index - 1)
         for idx in self._c_one_lsb(index):
-            acc = binop(acc, self._st[idx-1])
+            acc = binop(acc, self._st[idx - 1])
         return acc
 
     # Helpers.
@@ -319,14 +361,12 @@ class BIT:
         arr = [*self._st]
         for i in range(length, 0, -2):
             for step in self._c_zero_lsb(i):
-                arr[i-1] = inverse(arr[i-1], arr[i-1-step])
+                arr[i - 1] = inverse(arr[i - 1], arr[i - 1 - step])
         return arr
 
     @staticmethod
-    def bit_layout(
-            iterable: Iterable[_T],
-            binary_op: Callable[[_T, _T], _T] = add
-    ) -> List[_T]:
+    def bit_layout(iterable: Iterable[_T],
+                   binary_op: Callable[[_T, _T], _T] = add) -> List[_T]:
         """ BIT.bit_layout(iterable, [binary_op]) -> List[items].
         Transform to fenwick (bit) representation.
         """
@@ -335,9 +375,9 @@ class BIT:
         arr = list(iterable)
         i, length = 1, len(arr)
         while i < length:
-            j = 2*i - 1
+            j = 2 * i - 1
             while j < length:
-                arr[j] = binary_op(arr[j], arr[j-i])
+                arr[j] = binary_op(arr[j], arr[j - i])
                 j += 2 * i
             i *= 2
         return arr
