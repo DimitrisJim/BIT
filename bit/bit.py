@@ -25,6 +25,7 @@ _Gen = Generator[int, None, None]
 # todo: big todo, formalize way binary ops are used.
 class BIT:
     """ Binary Indexed Tree, commonly known as a Fenwick Tree. """
+
     def __init__(self,
                  iterable: Optional[Iterable[_T]] = None,
                  binop: Callable[[_T, _T], _T] = add,
@@ -210,8 +211,9 @@ class BIT:
         _ = self.pop(index)
 
     def pop(self, index: int = -1) -> _T:
-        """ B.pop([index]) -> item -- Remove and return item
-        at given index (default -1).
+        """ Remove and return item at given index (default -1). 
+        Requires `inverse_binop` be specified for indexes not 
+        equal to `-1`.
 
         >>> b = BIT(range(5), inverse_binop = int.__sub__)
         >>> b.pop()
@@ -258,19 +260,40 @@ class BIT:
         return value
 
     def remove(self, value: _T) -> None:
-        """ BIT.remove(value) -- Remove first occurence of value.
+        """ Remove and return a given value.
 
-        Raises ValueError if value is not present."""
+        >>> b = BIT(range(5), inverse_binop = int.__sub__)
+        >>> b.remove(0)
+        >>> print(b)
+        [1, 3, 3, 10]
+        >>> b.remove(4)
+        >>> print(b)
+        [1, 3, 3]
+        >>> b.remove(1)
+        >>> print(b)
+        [2, 5]
+
+        :complexity: :math: `O(n)`
+        :raises ValueError: If value is not present.
+        """
         self.pop(self.index(value))
 
     def index(self,
               value: _T,
               start: int = 0,
               stop: Optional[int] = None) -> int:
-        """ BIT.index(value) -- Return index of first occurence of
-        value.
+        """ Return the index of the first occurence of value.
+        `inverse_binop` is required in order to run `index`.
 
-        Raises ValueError if value is not present."""
+        >>> b = BIT(range(5), inverse_binop = int.__sub__)
+        >>> b.index(4)
+        4
+        >>> b.index(0)
+        0
+
+        :complexity: :math: `O(n)`
+        :raises ValueError: If value is not present in the collection.
+        """
         # delegate to original list.
         arr: List[_T] = self.original_layout()
         # to shut mypy up.
@@ -279,14 +302,36 @@ class BIT:
         return arr.index(value, start)
 
     def __iadd__(self, iterable: Iterable[_T]) -> 'BIT':
-        """ B += iterable -- In-place addition of elements in
-        iterable into B. """
+        """ Extend Binary Indexed Tree in-place by appending elements from
+        the iterable. The `inverse_binop` is only required when the
+        iterable is an instance of BIT.
+
+        >>> b = BIT(range(5))
+        >>> b += list(range(10))
+        >>> print(b)
+        [0, 1, 2, 6, 4, 4, 1, 13, 3, 7, 5, 18, 7, 15, 9]
+
+        :complexity: :math: `O(n)`
+        :raises TypeError: If iterable is an instance of BIT and `inverse_op`
+                           hasn't been specified.
+        """
         self.extend(iterable)
         return self
 
     def extend(self, iterable: Iterable[_T]) -> None:
-        """ B.extend(iterable) -- extend Binary Indexed Tree by
-        appending elements from iterable. """
+        """ Extend Binary Indexed Tree by appending elements from the
+        iterable. The `inverse_binop` is only required when the
+        iterable is an instance of BIT.
+
+        >>> b = BIT(range(5))
+        >>> b.extend(list(range(10)))
+        >>> print(b)
+        [0, 1, 2, 6, 4, 4, 1, 13, 3, 7, 5, 18, 7, 15, 9]
+
+        :complexity: :math: `O(n)`
+        :raises TypeError: If iterable is an instance of BIT and `inverse_op`
+                           hasn't been specified.
+        """
         if isinstance(iterable, type(self)):
             # don't use sums!
             iterable = iterable.original_layout()
@@ -296,6 +341,27 @@ class BIT:
     # Additional methods commonly defined on fenwick trees
     # todo: can be done more efficiently.
     def range_sum(self, i: int = 0, j: Optional[int] = None) -> _T:
+        """ Return the range sum until (including!) the given index.
+
+        >>> b = BIT(range(10), inverse_binop=int.__sub__)
+        >>> b.range_sum(3, 6)
+        15
+
+        :raises IndexError: If BIT is empty, i > j, or any of `i`,`j` are out of 
+                            bounds. Valid bounds for index are in 
+                            range ``[0, len(B))``
+        """
+        # We'll need inverse here.
+        if j is None:
+            j = len(self) - 1
+        if j < i:
+            raise IndexError("j must be > than i.")
+        if not self.inverse:
+            msg = "Inverse operator required for range_sum. "
+            raise TypeError(msg)
+        return self.inverse(self[j], self[i])
+
+    def prefix_sum(self, index: int) -> _T:
         """ Return the prefix sum (or prefix ``<binop>``) until (including!) the
         given index. ``BIT.__getitem__`` is shorthand for ``BIT.prefix_sum(i)``
         both behave in exactly the same way:
@@ -309,23 +375,6 @@ class BIT:
         :complexity: :math:`O(\log{}n)`
         :raises IndexError: If BIT is empty or index is out of bounds.
                             Valid bounds for index are in range ``[0, len(B))``
-        """
-        # We'll need inverse here.
-        if j is None:
-            j = len(self) - 1
-        if j < i:
-            raise IndexError("j must be > than i.")
-        if not self.inverse:
-            msg = "Inverse operator required for range_sum. "
-            raise TypeError(msg)
-        return self.inverse(self[j], self[i])
-
-    def prefix_sum(self, index: int) -> _T:
-        """ B.prefix_sum(index) -> value. Get prefix sum until (including!) given
-        index.
-
-        Raises IndexError if BIT is empty or index is out of bounds.
-        Valid bounds for index range in [0, len(B)).
         """
         # handle indexing behaviour, count *including* index.
         index = self._nmlz_index(index, len(self)) + 1

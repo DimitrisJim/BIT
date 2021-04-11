@@ -126,3 +126,5 @@ stats/results/
 
 # vscode
 .vscode
+.noseids
+.vim/
