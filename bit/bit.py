@@ -42,7 +42,8 @@ class BIT:
         is supplied, it can be used to restructure the initial array as well
         as support more methods.
 
-        :complexity: :math:`O(n)`
+        :complexity: :math:`O(n)` where `n` is the number of
+                     items in the iterable.
         """
         self._st = self.bit_layout(list(iterable or []), binop)
         self.binop = binop
@@ -52,7 +53,12 @@ class BIT:
         """ Return a sensible representation of the
         Binary Index Tree.
 
-        :complexity: `O(N)`
+        >>> b = BIT(range(10))
+        >>> print(b)
+        [0, 1, 2, 6, 4, 9, 6, 28, 8, 17]
+
+        :complexity: :math:`O(n)` where `n` is the number of items in
+                     the Binary Indexed Tree.
         """
         # delegate to list, takes care of printing really big lists.
         # don't return original, it requires inverse op.
@@ -61,6 +67,10 @@ class BIT:
     def __len__(self) -> int:
         """ Return the number of elements in the
         Binary Indexed Tree.
+
+        >>> b = BIT(range(10))
+        >>> len(b)
+        10
 
         :complexity: :math:`O(1)`
         """
@@ -77,7 +87,8 @@ class BIT:
         >>> b[9] == b.prefix_sum(9)
         True
 
-        :complexity: :math:`O(\log{}n)`
+        :complexity: :math:`O(\log{}n)` where `n` is the number of items in
+                     the Binary Indexed Tree.
         :raises IndexError: If BIT is empty or index is out of bounds.
                             Valid bounds for index are in range
                             ``[0, len(B))``.
@@ -107,7 +118,8 @@ class BIT:
         >>> b.original_layout()
         [10, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-        :complexity: :math:`O(\log{}n)`
+        :complexity: :math:`O(\log{}n)` where `n` is the number of items in
+                     the Binary Indexed Tree.
         :raises IndexError: If BIT is empty or index is out of bounds.
         :raises TypeError: If ``inverse_binop`` hasn't been supplied.
         """
@@ -143,7 +155,8 @@ class BIT:
         >>> b.original_layout()
         [0, 1, 2, 3, 4, 15, 6, 7, 8, 9]
 
-        :complexity: :math:`O(\log{}n)`
+        :complexity: :math:`O(\log{}n)` where `n` is the number of items in the
+                     Binary Indexed Tree.
         :raises IndexError: If BIT is empty or index is out of bounds.
         """
         storage, length = self._st, len(self)
@@ -163,7 +176,8 @@ class BIT:
         >>> b.original_layout()
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-        :complexity: :math:`O(\log{}n)`
+        :complexity: :math:`O(\log{}n)` where `n` is the number of items
+                     in the Binary Indexed Tree.
         """
         storage, length = self._st, len(self)
         # Index in which we will place new value is odd, can
@@ -187,7 +201,8 @@ class BIT:
         >>> prev_sum + 50 == b[5]
         True
 
-        :complexity: :math:`O(n)`
+        :complexity: :math:`O(n)` where `n` is the number of items in the
+                     Binary Indexed Tree.
         """
         # grab original layout, insert there, rebuild.
         # list will take care of index.
@@ -205,14 +220,15 @@ class BIT:
         >>> b.original_layout()
         [1, 2, 3, 4]
 
-        :complexity: :math: `O(n)`
+        :complexity: :math:`O(n)` where `n` is the number of items in
+                     the Binary Indexed Tree.
         :raises IndexError: If BIT is empty or index is out of range.
         """
         _ = self.pop(index)
 
     def pop(self, index: int = -1) -> _T:
-        """ Remove and return item at given index (default -1). 
-        Requires `inverse_binop` be specified for indexes not 
+        """ Remove and return item at given index (default -1).
+        Requires `inverse_binop` be specified for indexes not
         equal to `-1`.
 
         >>> b = BIT(range(5), inverse_binop = int.__sub__)
@@ -227,8 +243,10 @@ class BIT:
         >>> b.pop()
         0
 
-        :complexity: :math: `O(n)`
+        :complexity: :math:`O(n)` where `n` is the number of items in
+                     the Binary Indexed Tree.
         :raises IndexError: If BIT is empty or index is out of range.
+        :raises TypeError: If the `inverse_binop` hasn't been defined.
         """
         length = len(self)
         index = self._nmlz_index(index, length)
@@ -273,8 +291,9 @@ class BIT:
         >>> print(b)
         [2, 5]
 
-        :complexity: :math: `O(n)`
-        :raises ValueError: If value is not present.
+        :complexity: :math:`O(n)` where `n` is the number of items
+                     in the Binary Indexed Tree.
+        :raises ValueError: If the value is not present.
         """
         self.pop(self.index(value))
 
@@ -291,7 +310,8 @@ class BIT:
         >>> b.index(0)
         0
 
-        :complexity: :math: `O(n)`
+        :complexity: :math:`O(n)` where `n` is the number of items in
+                     the Binary Indexed Tree.
         :raises ValueError: If value is not present in the collection.
         """
         # delegate to original list.
@@ -311,7 +331,8 @@ class BIT:
         >>> print(b)
         [0, 1, 2, 6, 4, 4, 1, 13, 3, 7, 5, 18, 7, 15, 9]
 
-        :complexity: :math: `O(n)`
+        :complexity: :math:`O(n)` where `n` is the number of items in the
+                     Binary Indexed Tree.
         :raises TypeError: If iterable is an instance of BIT and `inverse_op`
                            hasn't been specified.
         """
@@ -328,7 +349,7 @@ class BIT:
         >>> print(b)
         [0, 1, 2, 6, 4, 4, 1, 13, 3, 7, 5, 18, 7, 15, 9]
 
-        :complexity: :math: `O(n)`
+        :complexity: :math:`O(n)`
         :raises TypeError: If iterable is an instance of BIT and `inverse_op`
                            hasn't been specified.
         """
@@ -347,9 +368,12 @@ class BIT:
         >>> b.range_sum(3, 6)
         15
 
-        :raises IndexError: If BIT is empty, i > j, or any of `i`,`j` are out of 
-                            bounds. Valid bounds for index are in 
+        :complexity: :math:`O(\log{}n)` where `n` is the number of items
+                     in the Binary Indexed Tree.
+        :raises IndexError: If BIT is empty, `i > j`, or any of `i`,`j` are
+                            out of bounds. Valid bounds for index are in
                             range ``[0, len(B))``
+        :raises TypeError: If `inverse_binop` hasn't been provided.
         """
         # We'll need inverse here.
         if j is None:
@@ -372,7 +396,8 @@ class BIT:
         >>> b.prefix_sum(9) == b[9]
         True
 
-        :complexity: :math:`O(\log{}n)`
+        :complexity: :math:`O(\log{}n)` where `n` is the number of items in
+                     the Binary Indexed Tree.
         :raises IndexError: If BIT is empty or index is out of bounds.
                             Valid bounds for index are in range ``[0, len(B))``
         """
@@ -391,12 +416,19 @@ class BIT:
 
     # Helpers.
     def original_layout(self) -> List[_T]:
-        """ BIT.original_layout() -> List[items]. Return the original
-        items in the list as used to build the Binary Indexed Tree.
+        """ Returns a list whose values, when transformed to a fenwick
+        tree would equal self.
 
-        This requires the inverse of the operator used to
-        construct the BIT originally. TypeError is raised if
-        it isn't supplied.
+        >>> b = BIT(range(10), inverse_binop=int.__sub__)
+        >>> b.original_layout()
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        >>> b[5] = 0
+        >>> b.original_layout()
+        [0, 1, 2, 3, 4, 0, 6, 7, 8, 9]
+
+        :complexity: :math:`O(n)` where `n` is the number of items in
+                     the Binary Indexed Tree.
+        :raises TypeError: If `inverse_binop` isn't provided.
         """
         if not self.inverse:
             msg = "Inverse Binary Operator is required for original_layout"
@@ -416,8 +448,15 @@ class BIT:
     @staticmethod
     def bit_layout(iterable: Iterable[_T],
                    binary_op: Callable[[_T, _T], _T] = add) -> List[_T]:
-        """ BIT.bit_layout(iterable, [binary_op]) -> List[items].
-        Transform to fenwick (bit) representation.
+        """ Transform iterable to fenwick (BIT) representation.
+
+        >>> BIT.bit_layout([1, 20, 4, 32])
+        [1, 21, 4, 57]
+        >>> BIT.bit_layout(i for i in range(13))
+        [0, 1, 2, 6, 4, 9, 6, 28, 8, 17, 10, 38, 12]
+
+        :complexity: :math:`O(n)` where `n` is the number of items
+                     in the iterable.
         """
         # This loop makes serious sense when the intermediate
         # representation in [tweakblogs] is understood.
