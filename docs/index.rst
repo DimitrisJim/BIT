@@ -3,24 +3,15 @@ Welcome to BIT's documentation!
 
 B(inary) I(ndexed) T(rees), also known as Fenwick Trees. Not actually trees.
 
-Getting Started
----------------
+Contents
+--------
 
 .. toctree::
    :maxdepth: 2
 
    installation
-   usage
-   
-
-Reference
----------
-
-.. toctree::
-   :maxdepth: 2
-
-   theory
-   bit
+   explained 
+   reference
 
 Indices and tables
 ==================

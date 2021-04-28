@@ -4,10 +4,6 @@
 Installation
 ============
 
-
-Stable release
---------------
-
 To install BIT, run this command in your terminal:
 
 .. code-block:: console
@@ -22,23 +18,13 @@ you through the process.
 .. _pip: https://pip.pypa.io
 .. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
 
+Alternatively, the sources for BIT can be downloaded from the `Github repo`_.
 
-From sources
-------------
-
-The sources for BIT can be downloaded from the `Github repo`_.
-
-You can either clone the public repository:
+You can clone the public repository:
 
 .. code-block:: console
 
     $ git clone git://github.com/DimitrisJim/bit
-
-Or download the `tarball`_:
-
-.. code-block:: console
-
-    $ curl -OJL https://github.com/DimitrisJim/bit/tarball/master
 
 Once you have a copy of the source, you can install it with:
 

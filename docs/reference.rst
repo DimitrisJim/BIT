@@ -46,11 +46,13 @@ The following operations without inverses have been tested:
 1. The union operator :math:`\cup` for two sets of arbitrary elements.
 2. The intersection operator :math:`\cap` for two sets of arbitrary elements.
 3. The symmetric difference operator :math:`\ominus` for two sets of arbitrary elements.
+4. Multiplication for integers, fractionals.
+5. The bitwise operators `&` (AND), `|` (OR) for integers.
 
 Simple Example
 ---------------
 
-As a simple example, let's initialize a binary indexed tree from a given iterable and query the 
+As a simple example, we initialize a Binary Indexed Tree from a given iterable and query the 
 object through `__getitem__` or `prefix_sum`. For example::
 
     >>> from bit import BIT
@@ -69,13 +71,17 @@ Without supplying the inverse operator, updating the value at a given index is a
 >>> b[-1]
 1725
 
-Note that there's a subtle difference between `update` and `__setitem__`. 
-`update` adds to the previous value in the specified index without replacing it. 
-`__setitem__` replaces the value previously present there. In order to do this, 
-the inverse of the binary operator supplied is required.
+Note that there's a subtle difference between `update` and `__setitem__`, `update` adds to the previous 
+value in the specified index without replacing it while  `__setitem__` replaces the value previously 
+present there. Due to the way the Binary Indexed Tree works, updating can be done *without* the inverse binary
+operator being specified (while `__setitem__` requires it.
 
-Binary Indexed Tree Class
---------------------------------
+BIT Class
+---------
+
+In this section, the methods of the Binary Indexed Tree are presented. Note that
+it implements the MutableSequence ABC allowing it to be used as a normal Python
+list would.
 
 .. autoclass:: bit.BIT
     :members:
